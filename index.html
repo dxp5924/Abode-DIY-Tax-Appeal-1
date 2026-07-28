@@ -1,0 +1,1261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#132c2c" />
+  <title>Abode Appeal - Broward County DIY MVP</title>
+  <style>
+    :root{
+      --ink:#142322;
+      --ink-2:#314644;
+      --muted:#687a77;
+      --forest:#173f3b;
+      --forest-2:#235952;
+      --mint:#dcefe7;
+      --mint-2:#eef8f3;
+      --cream:#f7f4ed;
+      --paper:#fffdf8;
+      --white:#ffffff;
+      --coral:#f47f61;
+      --coral-dark:#cd5e43;
+      --gold:#d8a33e;
+      --green:#1c805f;
+      --green-soft:#e7f6ef;
+      --orange-soft:#fff3e7;
+      --red:#b84242;
+      --red-soft:#fff0ef;
+      --blue:#356ca7;
+      --blue-soft:#edf5ff;
+      --line:#dfe6e1;
+      --shadow:0 18px 50px rgba(22,58,54,.10);
+      --shadow-sm:0 8px 24px rgba(22,58,54,.08);
+      --radius:22px;
+      --radius-sm:14px;
+      --max:1180px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(220,239,231,.8), transparent 26rem),
+        radial-gradient(circle at 94% 18%, rgba(244,127,97,.12), transparent 24rem),
+        var(--cream);
+      color:var(--ink);
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height:1.45;
+      min-height:100vh;
+    }
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    a{color:inherit}
+    .app-shell{min-height:100vh}
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:40;
+      border-bottom:1px solid rgba(223,230,225,.85);
+      background:rgba(247,244,237,.90);
+      backdrop-filter:blur(16px);
+    }
+    .topbar-inner{
+      max-width:var(--max);
+      margin:0 auto;
+      min-height:76px;
+      padding:12px 24px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+    }
+    .brand{display:flex;align-items:center;gap:12px;min-width:0}
+    .brand-mark{
+      width:42px;height:42px;border-radius:14px;
+      background:var(--forest);
+      display:grid;place-items:center;color:white;
+      box-shadow:0 8px 18px rgba(23,63,59,.2);
+      flex:0 0 auto;
+    }
+    .brand-name{font-weight:850;letter-spacing:-.03em;font-size:18px;white-space:nowrap}
+    .brand-sub{font-size:12px;color:var(--muted);margin-top:1px;white-space:nowrap}
+    .header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .mode-switch{
+      display:flex;gap:3px;padding:4px;border-radius:13px;background:#e9ece7;border:1px solid #dce2dc;
+    }
+    .mode-btn{
+      border:0;background:transparent;color:var(--muted);padding:8px 13px;border-radius:9px;font-size:13px;font-weight:750;
+    }
+    .mode-btn.active{background:var(--white);color:var(--forest);box-shadow:0 2px 9px rgba(22,58,54,.11)}
+    .demo-badge{
+      display:inline-flex;align-items:center;gap:7px;
+      padding:8px 11px;border-radius:999px;background:var(--orange-soft);color:#815221;
+      font-size:12px;font-weight:760;border:1px solid #f3d5b3;
+    }
+    .pulse{width:7px;height:7px;background:var(--coral);border-radius:50%;box-shadow:0 0 0 4px rgba(244,127,97,.15)}
+    .icon-btn{
+      width:38px;height:38px;border:1px solid var(--line);background:var(--white);border-radius:12px;
+      display:grid;place-items:center;color:var(--ink-2);
+    }
+    .container{max-width:var(--max);margin:0 auto;padding:34px 24px 90px}
+    .lookup-wrap{max-width:1040px;margin:0 auto;padding-top:24px}
+    .lookup-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:26px;align-items:stretch}
+    .hero-panel{
+      border-radius:32px;background:var(--forest);color:white;padding:48px;
+      position:relative;overflow:hidden;box-shadow:var(--shadow);
+      min-height:570px;display:flex;flex-direction:column;justify-content:space-between;
+    }
+    .hero-panel:before,.hero-panel:after{content:"";position:absolute;border-radius:50%;pointer-events:none}
+    .hero-panel:before{width:330px;height:330px;right:-120px;top:-130px;background:rgba(220,239,231,.12)}
+    .hero-panel:after{width:240px;height:240px;left:-110px;bottom:-130px;background:rgba(244,127,97,.15)}
+    .eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.14em;font-weight:850;color:var(--coral);margin-bottom:14px}
+    .hero-panel .eyebrow{color:#f6aa95}
+    h1,h2,h3,h4,p{margin-top:0}
+    h1{font-size:clamp(38px,5vw,64px);line-height:1.02;letter-spacing:-.055em;margin-bottom:20px}
+    h2{font-size:clamp(28px,3vw,40px);line-height:1.08;letter-spacing:-.04em;margin-bottom:12px}
+    h3{font-size:20px;line-height:1.2;letter-spacing:-.025em;margin-bottom:8px}
+    h4{font-size:15px;line-height:1.25;margin-bottom:6px}
+    .hero-copy{font-size:18px;line-height:1.6;color:rgba(255,255,255,.78);max-width:590px}
+    .hero-proof{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .proof-cell{padding:16px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.11)}
+    .proof-value{font-weight:850;font-size:20px;letter-spacing:-.02em}
+    .proof-label{font-size:12px;color:rgba(255,255,255,.65);margin-top:3px}
+    .lookup-card{background:var(--paper);border:1px solid var(--line);border-radius:30px;padding:34px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column}
+    .account-chip{display:flex;align-items:center;gap:11px;padding:13px 14px;border-radius:15px;background:var(--mint-2);margin:8px 0 24px}
+    .avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--mint);color:var(--forest);font-weight:850}
+    .small{font-size:12px;color:var(--muted)}
+    .label{font-size:13px;font-weight:800;color:var(--ink-2);display:block;margin-bottom:7px}
+    .field{margin-bottom:16px}
+    .input-wrap{position:relative}
+    input,select,textarea{
+      width:100%;border:1px solid #ccd8d2;background:white;color:var(--ink);
+      border-radius:13px;padding:13px 14px;outline:none;transition:.16s border,.16s box-shadow;
+    }
+    input:focus,select:focus,textarea:focus{border-color:var(--forest-2);box-shadow:0 0 0 4px rgba(35,89,82,.10)}
+    input[readonly]{background:#f3f5f2;color:#526460}
+    textarea{min-height:105px;resize:vertical}
+    .field-help{font-size:12px;color:var(--muted);margin-top:7px}
+    .btn{
+      border:1px solid transparent;border-radius:13px;padding:12px 17px;font-weight:820;
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;transition:.18s transform,.18s background,.18s border,.18s box-shadow;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn:active{transform:translateY(0)}
+    .btn-primary{background:var(--coral);color:#2c201c;box-shadow:0 8px 18px rgba(244,127,97,.25)}
+    .btn-primary:hover{background:#fa8b6e}
+    .btn-forest{background:var(--forest);color:white;box-shadow:0 8px 18px rgba(23,63,59,.18)}
+    .btn-secondary{background:white;border-color:#cad6d0;color:var(--forest)}
+    .btn-soft{background:var(--mint-2);color:var(--forest);border-color:#cfe3da}
+    .btn-danger-soft{background:var(--red-soft);color:var(--red);border-color:#f0c8c4}
+    .btn-sm{padding:8px 11px;border-radius:10px;font-size:12px}
+    .btn-block{width:100%}
+    .or-line{display:flex;align-items:center;gap:11px;color:var(--muted);font-size:12px;margin:15px 0}
+    .or-line:before,.or-line:after{content:"";height:1px;background:var(--line);flex:1}
+    .micro-disclaimer{font-size:11px;line-height:1.45;color:var(--muted);margin-top:auto;padding-top:20px}
+    .county-map{
+      height:170px;border-radius:18px;overflow:hidden;position:relative;background:#dcefe7;margin-top:18px;border:1px solid #cfe0d8;
+    }
+    .map-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(23,63,59,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(23,63,59,.06) 1px,transparent 1px);background-size:28px 28px}
+    .road{position:absolute;height:3px;background:rgba(255,255,255,.85);border-radius:9px;transform-origin:left center}
+    .road.r1{width:130%;left:-10%;top:55%;transform:rotate(-8deg)}
+    .road.r2{width:80%;left:16%;top:25%;transform:rotate(40deg)}
+    .road.r3{width:90%;left:5%;top:76%;transform:rotate(25deg)}
+    .coast{position:absolute;width:33%;height:130%;right:-8%;top:-10%;background:#b8d7e5;border-radius:48% 0 0 52%}
+    .pin{position:absolute;left:48%;top:42%;width:28px;height:28px;border-radius:50% 50% 50% 0;background:var(--coral);transform:rotate(-45deg);box-shadow:0 5px 12px rgba(0,0,0,.2)}
+    .pin:after{content:"";position:absolute;width:10px;height:10px;background:white;border-radius:50%;left:9px;top:9px}
+    .map-label{position:absolute;left:16px;bottom:13px;background:rgba(255,255,255,.92);padding:7px 10px;border-radius:9px;font-size:11px;font-weight:760;color:var(--forest)}
+    .property-shell{display:grid;grid-template-columns:238px minmax(0,1fr);gap:24px;align-items:start}
+    .side-nav{position:sticky;top:100px;background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:14px;box-shadow:var(--shadow-sm)}
+    .side-summary{padding:10px 9px 15px;border-bottom:1px solid var(--line);margin-bottom:10px}
+    .side-summary .address{font-size:13px;font-weight:800;line-height:1.35}
+    .side-summary .folio{font-size:11px;color:var(--muted);margin-top:4px}
+    .nav-item{
+      width:100%;border:0;background:transparent;border-radius:12px;padding:11px 10px;color:var(--muted);font-weight:760;font-size:13px;
+      display:flex;align-items:center;gap:10px;text-align:left;margin:3px 0;
+    }
+    .nav-item.active{background:var(--mint-2);color:var(--forest)}
+    .nav-item .nav-num{width:23px;height:23px;border-radius:8px;background:#e7ebe7;display:grid;place-items:center;font-size:11px}
+    .nav-item.active .nav-num{background:var(--forest);color:white}
+    .side-support{margin-top:12px;padding:13px;border-radius:14px;background:var(--forest);color:white}
+    .side-support p{font-size:11px;color:rgba(255,255,255,.7);margin:5px 0 10px}
+    .main-content{min-width:0}
+    .dashboard-hero{
+      background:linear-gradient(135deg,var(--forest),#275e57);color:white;border-radius:26px;padding:30px;
+      position:relative;overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:20px;
+    }
+    .dashboard-hero:after{content:"";position:absolute;width:240px;height:240px;border-radius:50%;right:-70px;top:-130px;background:rgba(255,255,255,.08)}
+    .dashboard-hero-row{display:flex;justify-content:space-between;align-items:flex-start;gap:25px;position:relative;z-index:1}
+    .dashboard-hero h2{font-size:34px;margin-bottom:9px}
+    .dashboard-hero p{color:rgba(255,255,255,.74);margin-bottom:0;max-width:610px}
+    .hero-deadline{text-align:right;flex:0 0 auto}
+    .hero-deadline .days{font-size:42px;font-weight:900;line-height:1;letter-spacing:-.05em;color:#f7ad98}
+    .hero-deadline .caption{font-size:11px;color:rgba(255,255,255,.65);margin-top:5px;text-transform:uppercase;letter-spacing:.08em}
+    .progress-wrap{margin-top:25px;position:relative;z-index:1}
+    .progress-label{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.68);margin-bottom:7px}
+    .progress-track{height:8px;background:rgba(255,255,255,.15);border-radius:999px;overflow:hidden}
+    .progress-fill{height:100%;background:var(--coral);border-radius:999px;transition:width .35s ease}
+    .grid{display:grid;gap:18px}
+    .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:0 5px 18px rgba(22,58,54,.045)}
+    .card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:16px}
+    .card-head p{margin:4px 0 0;color:var(--muted);font-size:13px}
+    .card-icon{width:40px;height:40px;border-radius:13px;background:var(--mint-2);display:grid;place-items:center;color:var(--forest);flex:0 0 auto}
+    .stat{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 4px 14px rgba(22,58,54,.04)}
+    .stat-label{font-size:12px;color:var(--muted);font-weight:720}
+    .stat-value{font-size:27px;font-weight:900;letter-spacing:-.04em;margin:6px 0 3px}
+    .stat-sub{font-size:11px;color:var(--muted)}
+    .stat-accent{color:var(--green)}
+    .section-title{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:27px 0 13px}
+    .section-title h3{margin:0}
+    .section-title p{margin:4px 0 0;font-size:13px;color:var(--muted)}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:800}
+    .pill-green{background:var(--green-soft);color:var(--green)}
+    .pill-orange{background:var(--orange-soft);color:#8a5a22}
+    .pill-blue{background:var(--blue-soft);color:var(--blue)}
+    .pill-gray{background:#eff1ee;color:#687a77}
+    .pill-red{background:var(--red-soft);color:var(--red)}
+    .info-row{display:flex;justify-content:space-between;gap:18px;padding:11px 0;border-bottom:1px solid #e8ece8;font-size:13px}
+    .info-row:last-child{border-bottom:0;padding-bottom:0}
+    .info-row span:first-child{color:var(--muted)}
+    .info-row span:last-child{text-align:right;font-weight:760}
+    .savings-card{background:linear-gradient(135deg,#ecf8f2,#fdfbf5)}
+    .savings-number{font-size:42px;font-weight:920;letter-spacing:-.055em;color:var(--green);margin:8px 0 2px}
+    .formula{padding:11px 12px;background:rgba(255,255,255,.75);border:1px solid #d7e7df;border-radius:12px;font-size:11px;color:var(--muted);margin-top:14px}
+    .timeline{position:relative;padding-left:31px}
+    .timeline:before{content:"";position:absolute;left:11px;top:7px;bottom:10px;width:2px;background:#d6e0da}
+    .timeline-item{position:relative;padding:0 0 20px}
+    .timeline-item:last-child{padding-bottom:0}
+    .timeline-dot{position:absolute;left:-30px;top:2px;width:20px;height:20px;border-radius:50%;background:white;border:2px solid #c6d6cf;display:grid;place-items:center;font-size:9px;font-weight:900;color:var(--muted)}
+    .timeline-item.done .timeline-dot{background:var(--green);border-color:var(--green);color:white}
+    .timeline-item.current .timeline-dot{background:var(--coral);border-color:var(--coral);color:#2c201c;box-shadow:0 0 0 5px rgba(244,127,97,.14)}
+    .timeline-title{font-size:14px;font-weight:820}
+    .timeline-copy{font-size:12px;color:var(--muted);margin-top:2px}
+    .callout{border-radius:16px;padding:15px 16px;border:1px solid;display:flex;gap:12px;align-items:flex-start}
+    .callout + .callout{margin-top:11px}
+    .callout-info{background:var(--blue-soft);border-color:#d3e3f5;color:#274f78}
+    .callout-warn{background:var(--orange-soft);border-color:#f1d2ad;color:#7a4d19}
+    .callout-success{background:var(--green-soft);border-color:#c6e5d7;color:#176447}
+    .callout-danger{background:var(--red-soft);border-color:#efc7c3;color:#973838}
+    .callout-title{font-size:13px;font-weight:850;margin-bottom:3px}
+    .callout-copy{font-size:12px;line-height:1.5;opacity:.9}
+    .action-card{display:flex;align-items:center;justify-content:space-between;gap:18px;background:var(--forest);color:white}
+    .action-card p{font-size:13px;color:rgba(255,255,255,.72);margin:5px 0 0;max-width:540px}
+    .step-card{background:var(--paper);border:1px solid var(--line);border-radius:20px;margin-bottom:14px;overflow:hidden;box-shadow:0 4px 15px rgba(22,58,54,.035)}
+    .step-head{padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid var(--line);background:#fbfcf9}
+    .step-title{display:flex;align-items:center;gap:12px}
+    .step-number{width:34px;height:34px;border-radius:11px;background:var(--forest);color:white;display:grid;place-items:center;font-weight:900;font-size:13px}
+    .step-body{padding:21px}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .form-grid .full{grid-column:1/-1}
+    .choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .choice{
+      border:1px solid #d4ddd8;background:white;border-radius:13px;padding:12px;display:flex;align-items:flex-start;gap:9px;font-size:12px;
+    }
+    .choice input{width:auto;margin:2px 0 0;accent-color:var(--forest)}
+    .choice strong{display:block;font-size:12px;margin-bottom:2px}
+    .worksheet{border:1px solid var(--line);border-radius:15px;overflow:hidden}
+    .worksheet-row{display:grid;grid-template-columns:180px 1fr auto;gap:13px;align-items:center;padding:11px 13px;border-bottom:1px solid var(--line);font-size:12px}
+    .worksheet-row:last-child{border-bottom:0}
+    .worksheet-row .k{color:var(--muted)}
+    .worksheet-row .v{font-weight:760;min-width:0;overflow-wrap:anywhere}
+    .copy-btn{border:0;background:var(--mint-2);color:var(--forest);font-size:11px;font-weight:800;border-radius:8px;padding:6px 8px}
+    .document-card{border:1px solid #d8e1dc;background:#fbfcfa;border-radius:15px;padding:14px;display:flex;align-items:center;gap:13px}
+    .doc-icon{width:42px;height:48px;border-radius:10px;background:var(--mint);display:grid;place-items:center;color:var(--forest);font-weight:900;flex:0 0 auto}
+    .doc-meta{min-width:0;flex:1}
+    .doc-name{font-size:13px;font-weight:830;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .doc-sub{font-size:11px;color:var(--muted);margin-top:3px}
+    .numbered-list{list-style:none;padding:0;margin:0;counter-reset:steps}
+    .numbered-list li{counter-increment:steps;display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #e8ece8;font-size:13px}
+    .numbered-list li:last-child{border-bottom:0}
+    .numbered-list li:before{content:counter(steps);width:24px;height:24px;border-radius:8px;background:var(--mint-2);color:var(--forest);font-size:11px;font-weight:900;display:grid;place-items:center;flex:0 0 auto}
+    .portal-card{border:1px solid #cbded5;background:var(--mint-2);border-radius:17px;padding:18px}
+    .portal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:15px}
+    .portal-url{font-size:11px;color:var(--muted);margin:3px 0 0}
+    .divider{height:1px;background:var(--line);margin:18px 0}
+    .check-row{display:flex;align-items:flex-start;gap:10px;margin:9px 0;font-size:12px}
+    .check-row input{width:auto;margin-top:2px;accent-color:var(--forest)}
+    .result-panel{text-align:center;padding:34px 20px}
+    .result-icon{width:66px;height:66px;border-radius:22px;background:var(--green-soft);color:var(--green);display:grid;place-items:center;margin:0 auto 15px;font-size:28px;font-weight:900}
+    details{border:1px solid var(--line);border-radius:14px;background:white;margin:9px 0;overflow:hidden}
+    summary{list-style:none;padding:14px 15px;font-size:13px;font-weight:820;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    summary::-webkit-details-marker{display:none}
+    summary:after{content:"+";font-size:18px;color:var(--muted)}
+    details[open] summary:after{content:"–"}
+    .details-body{padding:0 15px 15px;color:var(--muted);font-size:12px;line-height:1.6}
+    .operator-hero{background:var(--forest);color:white;border-radius:30px;padding:38px;box-shadow:var(--shadow);position:relative;overflow:hidden;margin-bottom:20px}
+    .operator-hero:after{content:"";position:absolute;width:340px;height:340px;border-radius:50%;right:-120px;top:-170px;background:rgba(244,127,97,.16)}
+    .operator-hero-inner{display:grid;grid-template-columns:1fr 300px;gap:30px;align-items:center;position:relative;z-index:1}
+    .operator-hero p{color:rgba(255,255,255,.72);font-size:16px;max-width:700px;margin-bottom:0}
+    .score-ring{width:185px;height:185px;border-radius:50%;margin:0 auto;background:conic-gradient(var(--coral) 0 93%,rgba(255,255,255,.13) 93% 100%);display:grid;place-items:center;position:relative}
+    .score-ring:before{content:"";position:absolute;inset:13px;background:var(--forest);border-radius:50%}
+    .score-inner{position:relative;text-align:center}
+    .score-value{font-size:45px;font-weight:920;letter-spacing:-.05em;line-height:1}
+    .score-label{font-size:11px;color:rgba(255,255,255,.64);margin-top:4px;text-transform:uppercase;letter-spacing:.08em}
+    .operator-nav{position:sticky;top:87px;z-index:20;display:flex;gap:7px;overflow:auto;padding:9px;background:rgba(247,244,237,.92);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:16px;margin-bottom:22px;box-shadow:var(--shadow-sm)}
+    .operator-nav button{white-space:nowrap;border:0;background:transparent;padding:9px 12px;border-radius:10px;font-size:12px;font-weight:800;color:var(--muted)}
+    .operator-nav button:hover{background:var(--white);color:var(--forest)}
+    .operator-section{scroll-margin-top:158px;margin:38px 0}
+    .q-label{display:inline-flex;align-items:center;gap:8px;color:var(--coral-dark);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;margin-bottom:9px}
+    .q-num{width:25px;height:25px;border-radius:8px;background:var(--coral);color:#31201b;display:grid;place-items:center;letter-spacing:0}
+    .answer-lede{font-size:18px;line-height:1.55;color:var(--ink-2);max-width:850px;margin-bottom:20px}
+    .value-card{min-height:190px}
+    .value-icon{width:42px;height:42px;border-radius:14px;background:var(--mint-2);display:grid;place-items:center;color:var(--forest);margin-bottom:15px}
+    .value-card p{font-size:13px;color:var(--muted);margin-bottom:0}
+    .launch-banner{display:flex;align-items:center;justify-content:space-between;gap:20px;border:1px solid #cfe2d9;background:linear-gradient(135deg,var(--mint-2),#fffaf5);border-radius:20px;padding:20px;margin-bottom:18px}
+    .launch-banner p{margin:4px 0 0;font-size:13px;color:var(--muted)}
+    .county-table{width:100%;border-collapse:separate;border-spacing:0;background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;font-size:12px}
+    .county-table th{text-align:left;background:#f0f4f0;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:12px;border-bottom:1px solid var(--line)}
+    .county-table td{padding:13px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+    .county-table tr:last-child td{border-bottom:0}
+    .county-table .winner td{background:#f2faf6}
+    .scorebar{width:90px;height:7px;border-radius:99px;background:#e1e6e2;overflow:hidden;margin-top:5px}
+    .scorebar span{display:block;height:100%;border-radius:99px;background:var(--forest)}
+    .metric-big{font-size:36px;font-weight:920;letter-spacing:-.05em;color:var(--forest);margin:7px 0 5px}
+    .metric-card p{font-size:12px;color:var(--muted);margin:0}
+    .data-note{font-size:11px;color:var(--muted);line-height:1.55;padding:12px 14px;background:#f1f3f0;border-radius:12px;margin-top:12px}
+    .boundary-table{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .boundary-col{border:1px solid var(--line);border-radius:17px;padding:16px;background:var(--paper)}
+    .boundary-col h4{display:flex;align-items:center;gap:7px}
+    .boundary-col ul{padding-left:17px;margin:10px 0 0;color:var(--muted);font-size:12px}
+    .boundary-col li{margin:7px 0}
+    .system-stack{display:grid;grid-template-columns:1fr 40px 1fr 40px 1fr;align-items:center;gap:8px}
+    .stack-block{min-height:150px;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:17px}
+    .stack-block h4{font-size:14px}
+    .stack-block p{font-size:12px;color:var(--muted);margin:0}
+    .stack-arrow{text-align:center;font-size:24px;color:#9baaa5}
+    .config-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+    .config-chip{padding:10px;border-radius:11px;background:#f0f4f0;border:1px solid #e0e7e2;font-size:11px;color:var(--ink-2);font-weight:700}
+    .rollout{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;position:relative}
+    .rollout:before{content:"";height:2px;background:#d5ded8;position:absolute;left:9%;right:9%;top:21px}
+    .phase{text-align:center;position:relative;padding:0 10px}
+    .phase-dot{width:44px;height:44px;border-radius:15px;background:var(--forest);color:white;display:grid;place-items:center;margin:0 auto 11px;font-weight:900;position:relative;z-index:1;box-shadow:0 0 0 6px var(--cream)}
+    .phase h4{font-size:13px}
+    .phase p{font-size:11px;color:var(--muted)}
+    .funnel{display:grid;gap:9px;margin-top:15px}
+    .funnel-row{display:grid;grid-template-columns:190px 1fr 75px;gap:12px;align-items:center;font-size:12px}
+    .funnel-track{height:24px;background:#edf1ee;border-radius:8px;overflow:hidden}
+    .funnel-bar{height:100%;background:linear-gradient(90deg,var(--forest),var(--forest-2));border-radius:8px;display:flex;align-items:center;padding-left:9px;color:white;font-size:10px;font-weight:800}
+    .metric-table{width:100%;border-collapse:collapse;font-size:12px}
+    .metric-table th{text-align:left;padding:10px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--line)}
+    .metric-table td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+    .metric-table tr:last-child td{border-bottom:0}
+    .source-list{display:grid;gap:8px}
+    .source-link{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;padding:10px 12px;background:white;border:1px solid var(--line);border-radius:11px;text-decoration:none;font-size:11px}
+    .source-link:hover{border-color:#b9c9c1}
+    .source-link span:first-child{font-weight:750;color:var(--ink-2)}
+    .source-link span:last-child{color:var(--muted);white-space:nowrap}
+    .chat-launch{
+      position:fixed;right:24px;bottom:23px;z-index:60;border:0;border-radius:18px;background:var(--forest);color:white;
+      padding:13px 17px;display:flex;align-items:center;gap:9px;font-weight:850;box-shadow:0 16px 35px rgba(23,63,59,.28);
+    }
+    .chat-dot{width:9px;height:9px;border-radius:50%;background:#68d8a8;box-shadow:0 0 0 4px rgba(104,216,168,.15)}
+    .chat-drawer{
+      position:fixed;right:24px;bottom:82px;width:min(390px,calc(100vw - 30px));max-height:min(670px,calc(100vh - 110px));
+      background:var(--paper);border:1px solid var(--line);border-radius:24px;z-index:70;box-shadow:0 24px 70px rgba(18,43,40,.24);
+      display:flex;flex-direction:column;overflow:hidden;transform:translateY(12px) scale(.98);opacity:0;pointer-events:none;transition:.2s;
+    }
+    .chat-drawer.open{transform:none;opacity:1;pointer-events:auto}
+    .chat-head{padding:16px 17px;background:var(--forest);color:white;display:flex;align-items:center;justify-content:space-between;gap:13px}
+    .chat-head-title{display:flex;gap:10px;align-items:center}
+    .bot-avatar{width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.12);display:grid;place-items:center;font-weight:900}
+    .chat-head h4{margin:0;color:white}
+    .chat-head p{font-size:10px;color:rgba(255,255,255,.64);margin:2px 0 0}
+    .chat-close{border:0;background:rgba(255,255,255,.1);color:white;width:30px;height:30px;border-radius:9px}
+    .chat-boundary{padding:10px 13px;font-size:10px;color:#785020;background:var(--orange-soft);border-bottom:1px solid #f1dbc1;line-height:1.45}
+    .chat-messages{padding:14px;overflow:auto;flex:1;min-height:230px;display:flex;flex-direction:column;gap:10px}
+    .msg{max-width:86%;padding:10px 12px;border-radius:14px;font-size:12px;line-height:1.5}
+    .msg.bot{align-self:flex-start;background:#eef3ef;color:var(--ink-2);border-bottom-left-radius:5px}
+    .msg.user{align-self:flex-end;background:var(--forest);color:white;border-bottom-right-radius:5px}
+    .msg .source-tag{display:inline-flex;margin-top:7px;font-size:9px;color:var(--green);font-weight:800;background:white;border-radius:7px;padding:4px 6px}
+    .chat-suggestions{padding:0 14px 9px;display:flex;gap:6px;overflow:auto}
+    .suggestion{border:1px solid var(--line);background:white;border-radius:999px;padding:7px 9px;white-space:nowrap;font-size:10px;color:var(--forest);font-weight:750}
+    .chat-input{border-top:1px solid var(--line);padding:10px;display:grid;grid-template-columns:1fr 42px;gap:7px}
+    .chat-input input{padding:10px 11px;font-size:12px}
+    .send-btn{border:0;background:var(--coral);border-radius:11px;font-weight:900;color:#2a1e19}
+    .chat-escalate{border-top:1px solid var(--line);padding:10px;display:flex;gap:7px}
+    .chat-escalate .btn{flex:1;font-size:10px;padding:8px}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(14,32,30,.48);z-index:90;display:grid;place-items:center;padding:20px;opacity:0;pointer-events:none;transition:.2s}
+    .modal-backdrop.open{opacity:1;pointer-events:auto}
+    .modal{width:min(720px,100%);max-height:90vh;overflow:auto;background:var(--paper);border-radius:26px;box-shadow:0 24px 90px rgba(0,0,0,.3);padding:25px;transform:translateY(14px);transition:.2s}
+    .modal-backdrop.open .modal{transform:none}
+    .modal-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;margin-bottom:18px}
+    .package-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+    .package{border:1px solid var(--line);border-radius:16px;padding:15px;background:white;position:relative}
+    .package.selected{border:2px solid var(--forest);background:var(--mint-2)}
+    .package .tag{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--coral-dark);font-weight:900;margin-bottom:7px}
+    .package p{font-size:11px;color:var(--muted);min-height:50px}
+    .package-price{font-size:13px;font-weight:850;margin-bottom:11px}
+    .toast{position:fixed;left:50%;bottom:25px;z-index:120;transform:translate(-50%,20px);background:#162c2a;color:white;padding:11px 15px;border-radius:12px;font-size:12px;font-weight:750;box-shadow:0 12px 35px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:.23s}
+    .toast.show{opacity:1;transform:translate(-50%,0)}
+    .footer{max-width:var(--max);margin:0 auto;padding:0 24px 80px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+    .footer a{color:var(--forest);font-weight:760;text-decoration:none}
+    .hidden{display:none!important}
+    .nowrap{white-space:nowrap}
+    .mt-0{margin-top:0}.mt-1{margin-top:8px}.mt-2{margin-top:14px}.mt-3{margin-top:20px}.mb-0{margin-bottom:0}.text-muted{color:var(--muted)}.text-green{color:var(--green)}.text-red{color:var(--red)}
+    @media(max-width:980px){
+      .lookup-grid,.operator-hero-inner{grid-template-columns:1fr}
+      .hero-panel{min-height:auto}
+      .operator-hero{text-align:left}.score-ring{margin:0}
+      .property-shell{grid-template-columns:1fr}
+      .side-nav{position:static;display:grid;grid-template-columns:1fr;gap:5px}
+      .side-summary{display:none}.side-support{display:none}
+      .nav-list{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+      .nav-item{justify-content:center;padding:9px 6px;font-size:11px}.nav-item .nav-num{display:none}
+      .system-stack{grid-template-columns:1fr}.stack-arrow{transform:rotate(90deg)}
+      .boundary-table{grid-template-columns:1fr}
+    }
+    @media(max-width:760px){
+      .topbar-inner{padding:10px 14px}.brand-sub,.demo-badge{display:none}.mode-btn{padding:8px 9px;font-size:11px}
+      .container{padding:22px 14px 80px}
+      .hero-panel,.lookup-card,.operator-hero{padding:25px;border-radius:23px}
+      .hero-panel h1{font-size:43px}
+      .hero-proof{grid-template-columns:1fr}
+      .grid-2,.grid-3,.grid-4,.form-grid,.choice-grid,.package-grid,.config-grid{grid-template-columns:1fr}
+      .form-grid .full{grid-column:auto}
+      .dashboard-hero{padding:23px}.dashboard-hero-row{display:block}.hero-deadline{text-align:left;margin-top:20px}.hero-deadline .days{font-size:36px}
+      .action-card,.launch-banner{align-items:flex-start;flex-direction:column}
+      .worksheet-row{grid-template-columns:1fr auto}.worksheet-row .k{grid-column:1/-1;margin-bottom:-6px}
+      .county-table{display:block;overflow-x:auto;white-space:nowrap}
+      .rollout{grid-template-columns:1fr;gap:17px}.rollout:before{display:none}.phase{text-align:left;display:grid;grid-template-columns:52px 1fr;column-gap:12px}.phase-dot{margin:0;grid-row:1/3}.phase h4,.phase p{text-align:left}
+      .funnel-row{grid-template-columns:1fr 58px}.funnel-track{grid-column:1/-1;grid-row:2}
+      .chat-launch{right:14px;bottom:14px}.chat-drawer{right:14px;bottom:70px}
+      .footer{padding:0 14px 70px}
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="app-shell"></div>
+  <button class="chat-launch" data-action="toggle-chat" aria-label="Open Abode Assistant"><span class="chat-dot"></span> Ask Abode</button>
+  <div id="chatDrawer" class="chat-drawer" aria-live="polite"></div>
+  <div id="supportModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Support options"></div>
+  <div id="toast" class="toast" role="status"></div>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const SOURCES = [
+      {name:'Broward County Property Appraiser - 2026 appeals and deadline', label:'Official county', url:'https://bcpa.net/value.asp'},
+      {name:'Broward County VAB - filing fee and process', label:'Official county', url:'https://www.broward.org/VAB/Pages/Welcome.aspx'},
+      {name:'Broward FY2026 adopted operating budget - VAB workload', label:'Official county', url:'https://www.broward.org/Budget/Documents/FY26/FY26%20Adopted%20Budget/FY26_Adopted_Operating.html'},
+      {name:'Broward Property Appraiser - average millage estimator', label:'Official county', url:'https://bcpa.net/taxcalc.asp'},
+      {name:'Broward Property Appraiser - 2025 municipal millage table', label:'Official county', url:'https://bcpa.net/millage.asp'},
+      {name:'Florida Department of Revenue - disagreeing with property value', label:'Official state', url:'https://floridarevenue.com/property/Pages/Taxpayers_PropertyValueDisagree.aspx'},
+      {name:'Florida Statutes section 194.011 - filing and evidence exchange', label:'Official state', url:'https://leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0100-0199%2F0194%2FSections%2F0194.011.html'},
+      {name:'Miami-Dade 2026 VAB portal', label:'Comparator', url:'https://vabprod.miamidade.gov/axiaweb2026/'},
+      {name:'Orange County 2026 VAB portal', label:'Comparator', url:'https://vab.occompt.com/2026/'},
+      {name:'Broward 2023 VAB public notice / DR-529 summary', label:'Historical outcome signal', url:'https://floridapublicnotices.com/notices/10989248'}
+    ];
+
+    const DEMO_PROPERTIES = [
+      {
+        id:'ftl-demo', owner:'Jordan Rivera', address:'410 Harbor Pine Lane, Fort Lauderdale, FL 33301', city:'Fort Lauderdale', county:'Broward County',
+        parcel:'5042-11-09-0410', type:'Single-family residence', justValue:615000, assessedValue:615000, exemptions:50000,
+        supportedValue:545000, millage:18.5714, lat:'26.122', lng:'-80.137', note:'Synthetic demo property - not a live county parcel.'
+      },
+      {
+        id:'holly-demo', owner:'Jordan Rivera', address:'2250 Palm Shore Avenue, Hollywood, FL 33020', city:'Hollywood', county:'Broward County',
+        parcel:'5142-15-18-0720', type:'Townhome', justValue:492000, assessedValue:492000, exemptions:50000,
+        supportedValue:442000, millage:22.0571, lat:'26.011', lng:'-80.149', note:'Synthetic demo property - not a live county parcel.'
+      },
+      {
+        id:'pomp-demo', owner:'Jordan Rivera', address:'980 Cypress Marina Drive, Pompano Beach, FL 33060', city:'Pompano Beach', county:'Broward County',
+        parcel:'4942-01-28-1630', type:'Condominium unit', justValue:388000, assessedValue:388000, exemptions:25000,
+        supportedValue:348000, millage:20.3823, lat:'26.237', lng:'-80.125', note:'Synthetic demo property - not a live county parcel.'
+      }
+    ];
+
+    const DEFAULT_STATE = {
+      mode:'homeowner',
+      homeownerTab:'overview',
+      property:null,
+      account:{owner:'Jordan Rivera', email:'jordan.rivera@example.com', phone:'(954) 555-0148', mailing:''},
+      eligibility:{singleParcel:'yes', appealType:'value', onTime:'yes', ownerMatch:'yes', represented:'no', checked:false},
+      appealReasons:['The assessment appears higher than market value'],
+      filing:{answersSaved:false, evidenceDownloaded:false, portalOpened:false, transaction:'', filedDate:'', feePaid:false, attested:false, filed:false},
+      hearing:{date:'2026-11-12', format:'remote', noticeRead:false, evidenceUploaded:false, scriptReviewed:false, calendarAdded:false},
+      result:{outcome:'', decisionDate:'', finalValue:'', notes:'', closed:false},
+      support:{package:'DIY Guide', callDate:'', callTime:'', scheduled:false},
+      chatOpen:false,
+      modalOpen:false,
+      chatMessages:[
+        {from:'bot', text:'Hi Jordan - I can explain your Broward filing steps, deadlines, hearing preparation, and when to escalate. I cannot file, sign, or make a legal conclusion for you.', source:'Verified Broward + Florida guidance'}
+      ]
+    };
+
+    let state = loadState();
+
+    function loadState(){
+      try{
+        const raw = localStorage.getItem('abodeAppealMvp');
+        if(!raw) return structuredClone(DEFAULT_STATE);
+        const saved = JSON.parse(raw);
+        return deepMerge(structuredClone(DEFAULT_STATE), saved);
+      } catch(e){ return structuredClone(DEFAULT_STATE); }
+    }
+    function deepMerge(target, source){
+      if(!source || typeof source !== 'object') return target;
+      Object.keys(source).forEach(k => {
+        if(source[k] && typeof source[k] === 'object' && !Array.isArray(source[k])){
+          target[k] = deepMerge(target[k] || {}, source[k]);
+        } else target[k] = source[k];
+      });
+      return target;
+    }
+    function saveState(){
+      try{ localStorage.setItem('abodeAppealMvp', JSON.stringify(state)); }catch(e){}
+    }
+    function setPath(path, value){
+      const parts = path.split('.'); let cur = state;
+      parts.slice(0,-1).forEach(p => { if(!cur[p]) cur[p]={}; cur=cur[p]; });
+      cur[parts[parts.length-1]] = value;
+      saveState();
+    }
+    function escapeHTML(v=''){
+      return String(v).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]));
+    }
+    function money(n){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(Number(n)||0)}
+    function num(n){return new Intl.NumberFormat('en-US').format(Number(n)||0)}
+    function displayDate(v){
+      if(!v) return 'Not entered';
+      const d = new Date(v+'T12:00:00');
+      return new Intl.DateTimeFormat('en-US',{month:'long',day:'numeric',year:'numeric'}).format(d);
+    }
+    function shortDate(v){
+      if(!v) return 'TBD';
+      const d = new Date(v+'T12:00:00');
+      return new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(d);
+    }
+    function subtractDays(v, days){
+      if(!v) return '';
+      const d = new Date(v+'T12:00:00'); d.setDate(d.getDate()-days);
+      return d.toISOString().slice(0,10);
+    }
+    function daysToDeadline(){
+      const deadline = new Date('2026-09-18T23:59:59');
+      const now = new Date();
+      return Math.max(0, Math.ceil((deadline-now)/86400000));
+    }
+    function calcSavings(prop=state.property, finalValue=null){
+      if(!prop) return {currentTaxable:0,supportedTaxable:0,reduction:0,savings:0};
+      const target = finalValue !== null && finalValue !== '' ? Number(finalValue) : Number(prop.supportedValue);
+      const currentTaxable = Math.max(0, Number(prop.assessedValue)-Number(prop.exemptions));
+      const supportedTaxable = Math.max(0, target-Number(prop.exemptions));
+      const reduction = Math.max(0, currentTaxable-supportedTaxable);
+      return {currentTaxable,supportedTaxable,reduction,savings:reduction*Number(prop.millage)/1000};
+    }
+    function progress(){
+      if(state.result.closed) return 100;
+      if(state.hearing.evidenceUploaded) return 78;
+      if(state.filing.filed) return 58;
+      if(state.filing.answersSaved) return 34;
+      if(state.eligibility.checked) return 23;
+      if(state.property) return 12;
+      return 0;
+    }
+    function nextAction(){
+      if(!state.property) return {title:'Find your property',copy:'Enter the property address to map the correct county, deadline, fee, and filing path.',tab:'overview'};
+      if(!state.eligibility.checked) return {title:'Confirm this DIY path',copy:'Answer five short questions so we can flag situations that need a different filing route.',tab:'file'};
+      if(!state.filing.answersSaved) return {title:'Review your filing worksheet',copy:'Confirm the information you will copy into the Broward County petition portal.',tab:'file'};
+      if(!state.filing.filed) return {title:'Submit through Broward County',copy:'Open the official portal, submit the petition yourself, then return with the transaction number.',tab:'file'};
+      if(!state.hearing.evidenceUploaded) return {title:'Prepare for the hearing',copy:'Add the hearing date, calculate the evidence deadline, and complete the hearing checklist.',tab:'hearing'};
+      if(!state.result.closed) return {title:'Record the decision',copy:'When Broward sends the result, add it here to close the appeal and confirm estimated savings.',tab:'result'};
+      return {title:'Appeal complete',copy:'Your result is recorded. Keep the decision and tax records with your property documents.',tab:'result'};
+    }
+    function icon(name,size=20){
+      const icons={
+        home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/>',
+        search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+        map:'<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>',
+        file:'<path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h8M9 17h8"/>',
+        calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+        check:'<path d="m5 12 4 4L19 6"/>',
+        chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+        bot:'<rect x="4" y="6" width="16" height="13" rx="3"/><path d="M12 2v4M8 11h.01M16 11h.01M8 15h8"/>',
+        help:'<circle cx="12" cy="12" r="10"/><path d="M9.5 9a2.7 2.7 0 1 1 4.6 2c-1.1 1-2.1 1.3-2.1 3M12 18h.01"/>',
+        arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+        dollar:'<circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8M12 6v12"/>',
+        shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>',
+        user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+        mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+        phone:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7A2 2 0 0 1 22 16.9z"/>',
+        external:'<path d="M14 3h7v7M10 14 21 3"/><path d="M21 14v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h6"/>',
+        download:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/>',
+        clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+        settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1z"/>',
+        refresh:'<path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M18.5 9A7 7 0 0 0 6 6.5L4 11M5.5 15A7 7 0 0 0 18 17.5l2-4.5"/>',
+        alert:'<path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>'
+      };
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.help}</svg>`;
+    }
+
+    function render(){
+      document.getElementById('app').innerHTML = `
+        ${renderHeader()}
+        <main class="container">${state.mode==='operator' ? renderOperator() : renderHomeowner()}</main>
+        ${renderFooter()}
+      `;
+      renderChat();
+      renderModal();
+      saveState();
+    }
+
+    function renderHeader(){
+      return `<header class="topbar">
+        <div class="topbar-inner">
+          <div class="brand">
+            <div class="brand-mark">${icon('home',22)}</div>
+            <div><div class="brand-name">Abode Appeal</div><div class="brand-sub">Broward County DIY pilot</div></div>
+          </div>
+          <div class="header-actions">
+            <span class="demo-badge"><span class="pulse"></span> Interactive case prototype</span>
+            <div class="mode-switch" aria-label="View switcher">
+              <button class="mode-btn ${state.mode==='homeowner'?'active':''}" data-action="set-mode" data-mode="homeowner">Homeowner</button>
+              <button class="mode-btn ${state.mode==='operator'?'active':''}" data-action="set-mode" data-mode="operator">Operator</button>
+            </div>
+            <button class="icon-btn" data-action="reset-demo" title="Reset prototype">${icon('refresh',17)}</button>
+          </div>
+        </div>
+      </header>`;
+    }
+
+    function renderHomeowner(){
+      return state.property ? renderPropertyWorkspace() : renderLookup();
+    }
+
+    function renderLookup(){
+      return `<section class="lookup-wrap">
+        <div class="lookup-grid">
+          <div class="hero-panel">
+            <div style="position:relative;z-index:1">
+              <div class="eyebrow">Your appeal, made doable</div>
+              <h1>File it yourself.<br>Never feel on your own.</h1>
+              <p class="hero-copy">Abode turns your evidence package into a personalized Broward County filing plan - with the exact deadline, form answers, hearing checklist, and support boundary in one place.</p>
+            </div>
+            <div class="hero-proof">
+              <div class="proof-cell"><div class="proof-value">Sep 18</div><div class="proof-label">2026 value appeal deadline</div></div>
+              <div class="proof-cell"><div class="proof-value">$25</div><div class="proof-label">Broward filing fee</div></div>
+              <div class="proof-cell"><div class="proof-value">24/7</div><div class="proof-label">Procedure-focused assistant</div></div>
+            </div>
+          </div>
+          <div class="lookup-card">
+            <div class="eyebrow">Step 1 of 4</div>
+            <h2 style="font-size:31px">Find the right property</h2>
+            <p class="text-muted" style="font-size:14px">We already know the account owner. Add the property address so we can map the correct county, deadline, fee, and filing path.</p>
+            <div class="account-chip">
+              <div class="avatar">JR</div>
+              <div><div style="font-size:13px;font-weight:830">Jordan Rivera</div><div class="small">Paid DIY customer · Demo profile</div></div>
+            </div>
+            <div class="field">
+              <label class="label" for="addressInput">Property address</label>
+              <div class="input-wrap">
+                <input id="addressInput" list="propertyOptions" autocomplete="street-address" placeholder="Start typing a Broward County address" />
+                <datalist id="propertyOptions">
+                  ${DEMO_PROPERTIES.map(p=>`<option value="${escapeHTML(p.address)}"></option>`).join('')}
+                </datalist>
+              </div>
+              <div class="field-help">Prototype behavior: matches demo addresses or generates a Broward sample record for any address entered.</div>
+            </div>
+            <button class="btn btn-forest btn-block" data-action="search-property">${icon('search',17)} Match my property</button>
+            <div class="or-line">or</div>
+            <button class="btn btn-secondary btn-block" data-action="use-demo-property">Use the Fort Lauderdale demo</button>
+            <div class="county-map" aria-label="Stylized Broward County map">
+              <div class="map-grid"></div><div class="road r1"></div><div class="road r2"></div><div class="road r3"></div><div class="coast"></div><div class="pin"></div><div class="map-label">Broward County, Florida</div>
+            </div>
+            <p class="micro-disclaimer">This is an interview prototype with synthetic property data. A production version would connect the entered address to a verified county parcel record before showing values or deadlines.</p>
+          </div>
+        </div>
+      </section>`;
+    }
+
+    function renderPropertyWorkspace(){
+      const p=state.property, n=nextAction(), pct=progress();
+      return `<div class="property-shell">
+        <aside class="side-nav">
+          <div class="side-summary"><div class="address">${escapeHTML(p.address)}</div><div class="folio">Folio ${escapeHTML(p.parcel)}</div></div>
+          <div class="nav-list">
+            ${navItem('overview','1','Overview')}
+            ${navItem('file','2','File')}
+            ${navItem('hearing','3','Hearing')}
+            ${navItem('result','4','Result')}
+          </div>
+          <div class="side-support"><strong style="font-size:13px">Need a human?</strong><p>Email is included. Review calls and full-service filing are paid upgrades.</p><button class="btn btn-primary btn-sm btn-block" data-action="open-support">Support options</button></div>
+        </aside>
+        <section class="main-content">
+          <div class="dashboard-hero">
+            <div class="dashboard-hero-row">
+              <div><div class="eyebrow">2026 Broward County value appeal</div><h2>Hi Jordan, here is your next move.</h2><p><strong style="color:white">${escapeHTML(n.title)}:</strong> ${escapeHTML(n.copy)}</p></div>
+              <div class="hero-deadline"><div class="days">${daysToDeadline()}</div><div class="caption">days to file</div><div style="font-size:11px;margin-top:6px;color:rgba(255,255,255,.78)">Deadline: Sep 18, 2026</div></div>
+            </div>
+            <div class="progress-wrap"><div class="progress-label"><span>Appeal progress</span><span>${pct}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>
+          </div>
+          ${state.homeownerTab==='overview'?renderOverview():state.homeownerTab==='file'?renderFile():state.homeownerTab==='hearing'?renderHearing():renderResult()}
+        </section>
+      </div>`;
+    }
+    function navItem(tab,num,label){return `<button class="nav-item ${state.homeownerTab===tab?'active':''}" data-action="set-tab" data-tab="${tab}"><span class="nav-num">${num}</span>${label}</button>`}
+
+    function renderOverview(){
+      const p=state.property, s=calcSavings();
+      const n=nextAction();
+      return `
+        <div class="grid grid-4">
+          <div class="stat"><div class="stat-label">Estimated annual savings</div><div class="stat-value stat-accent">${money(s.savings)}</div><div class="stat-sub">If evidence-supported value is granted</div></div>
+          <div class="stat"><div class="stat-label">Potential value reduction</div><div class="stat-value">${money(s.reduction)}</div><div class="stat-sub">Simplified taxable-value estimate</div></div>
+          <div class="stat"><div class="stat-label">County filing fee</div><div class="stat-value">$25</div><div class="stat-sub">Paid directly to Broward County</div></div>
+          <div class="stat"><div class="stat-label">Current stage</div><div class="stat-value" style="font-size:21px">${state.filing.filed?'Hearing prep':'Filing'}</div><div class="stat-sub">Abode guides; you submit</div></div>
+        </div>
+
+        <div class="section-title"><div><h3>Your property and savings estimate</h3><p>Mapped from the address and Abode evidence package.</p></div><span class="pill pill-orange">Prototype data</span></div>
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="card-head"><div><h3>Property match</h3><p>Review before using any filing answer.</p></div><div class="card-icon">${icon('map')}</div></div>
+            <div class="info-row"><span>Owner</span><span>${escapeHTML(p.owner)}</span></div>
+            <div class="info-row"><span>Property</span><span>${escapeHTML(p.address)}</span></div>
+            <div class="info-row"><span>County</span><span>${escapeHTML(p.county)}</span></div>
+            <div class="info-row"><span>Folio / parcel</span><span>${escapeHTML(p.parcel)}</span></div>
+            <div class="info-row"><span>Property type</span><span>${escapeHTML(p.type)}</span></div>
+            <div class="info-row"><span>2026 just value</span><span>${money(p.justValue)}</span></div>
+            <button class="btn btn-secondary btn-sm mt-3" data-action="change-property">Change property</button>
+          </div>
+          <div class="card savings-card">
+            <div class="card-head"><div><h3>Estimated tax impact</h3><p>Clear enough to understand, cautious enough to trust.</p></div><div class="card-icon">${icon('dollar')}</div></div>
+            <div class="small">Potential annual savings</div>
+            <div class="savings-number">${money(s.savings)}</div>
+            <div class="small">Based on a ${money(s.reduction)} estimated taxable-value reduction and ${Number(p.millage).toFixed(4)} mills.</div>
+            <div class="formula">(${money(s.currentTaxable)} current taxable value - ${money(s.supportedTaxable)} supported taxable value) × ${Number(p.millage).toFixed(4)} ÷ 1,000</div>
+            <div class="callout callout-info mt-2"><div>${icon('help',17)}</div><div><div class="callout-title">Estimate, not a promise</div><div class="callout-copy">Final savings depend on the VAB decision, exemptions, capped assessed value, taxing districts, and the certified tax rate. The appeal challenges market value - not the tax rate.</div></div></div>
+          </div>
+        </div>
+
+        <div class="section-title"><div><h3>Your end-to-end plan</h3><p>One next action at a time.</p></div></div>
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="timeline">
+              <div class="timeline-item ${state.property?'done':''}"><span class="timeline-dot">1</span><div class="timeline-title">Match the property</div><div class="timeline-copy">Confirm owner, address, folio, values, and county.</div></div>
+              <div class="timeline-item ${state.filing.filed?'done':!state.filing.filed?'current':''}"><span class="timeline-dot">2</span><div class="timeline-title">File the petition yourself</div><div class="timeline-copy">Use the copy-ready worksheet, evidence package, and official Broward portal.</div></div>
+              <div class="timeline-item ${state.hearing.evidenceUploaded?'done':state.filing.filed?'current':''}"><span class="timeline-dot">3</span><div class="timeline-title">Prepare for the hearing</div><div class="timeline-copy">Calculate the evidence deadline and rehearse a five-minute explanation.</div></div>
+              <div class="timeline-item ${state.result.closed?'done':state.hearing.evidenceUploaded?'current':''}"><span class="timeline-dot">4</span><div class="timeline-title">Record the result</div><div class="timeline-copy">Save the decision and confirm estimated tax impact.</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>What Abode does - and does not do</h3><p>A clear self-service boundary protects trust.</p></div><div class="card-icon">${icon('shield')}</div></div>
+            <div class="callout callout-success"><div>${icon('check',17)}</div><div><div class="callout-title">Included in DIY</div><div class="callout-copy">Personalized deadlines, copy-ready filing answers, evidence-package handoff, hearing checklist, reminders, chatbot, and email support.</div></div></div>
+            <div class="callout callout-warn"><div>${icon('user',17)}</div><div><div class="callout-title">You remain the filer</div><div class="callout-copy">You review and attest to the information, sign, submit through the county, pay the county fee, upload evidence, and attend the hearing.</div></div></div>
+            <div class="callout callout-info"><div>${icon('phone',17)}</div><div><div class="callout-title">Human help is available</div><div class="callout-copy">Email is included. A paid review call or full-service upgrade is available for defined exceptions or added confidence.</div></div></div>
+          </div>
+        </div>
+        <div class="card action-card mt-3"><div><h3 class="mb-0">${escapeHTML(n.title)}</h3><p>${escapeHTML(n.copy)}</p></div><button class="btn btn-primary nowrap" data-action="set-tab" data-tab="${n.tab}">Continue ${icon('arrow',17)}</button></div>
+      `;
+    }
+
+    function eligibilityIssues(){
+      const e=state.eligibility, issues=[];
+      if(e.singleParcel!=='yes') issues.push('Multiple or joint parcels require a different petition route and county review.');
+      if(e.appealType!=='value') issues.push('This MVP covers market-value appeals only. Exemption, classification, portability, and deferral appeals use different instructions.');
+      if(e.onTime!=='yes') issues.push('Late petitions require a good-cause review and should enter a human exception queue.');
+      if(e.ownerMatch!=='yes') issues.push('The owner or authorized filer must be verified before the petition is signed.');
+      if(e.represented==='yes') issues.push('Representation and authorization documents are outside the standard owner-filed DIY path.');
+      return issues;
+    }
+
+    function renderFile(){
+      const p=state.property, issues=eligibilityIssues();
+      return `
+        <div class="section-title mt-0"><div><h2 style="font-size:31px">File your Broward petition</h2><p>Abode prepares the path. You review, sign, submit, and pay Broward County directly.</p></div><span class="pill ${state.filing.filed?'pill-green':'pill-orange'}">${state.filing.filed?'Filed':'Due Sep 18, 2026'}</span></div>
+        <div class="callout callout-info mb-0"><div>${icon('shield',18)}</div><div><div class="callout-title">The self-service boundary</div><div class="callout-copy">Abode does not log into the county portal, store your county password, sign the petition, or represent you. This guide reduces ambiguity without pretending the homeowner is receiving full-service filing.</div></div></div>
+
+        <div class="step-card mt-3">
+          <div class="step-head"><div class="step-title"><div class="step-number">1</div><div><h3 class="mb-0">Confirm the standard DIY path</h3><div class="small">Five questions prevent the wrong instructions.</div></div></div>${state.eligibility.checked?(issues.length?'<span class="pill pill-red">Exception flagged</span>':'<span class="pill pill-green">Standard path</span>'):''}</div>
+          <div class="step-body">
+            <div class="form-grid">
+              ${selectField('One residential parcel?','eligibility.singleParcel',state.eligibility.singleParcel,[['yes','Yes - one parcel'],['no','No - multiple or joint parcels']])}
+              ${selectField('What are you appealing?','eligibility.appealType',state.eligibility.appealType,[['value','The property market value'],['exemption','Exemption or classification denial'],['portability','Portability or tax deferral']])}
+              ${selectField('Will you file by September 18, 2026?','eligibility.onTime',state.eligibility.onTime,[['yes','Yes'],['no','No / deadline may be missed']])}
+              ${selectField('Does the owner name match?','eligibility.ownerMatch',state.eligibility.ownerMatch,[['yes','Yes'],['no','No / needs review']])}
+              ${selectField('Is a representative filing?','eligibility.represented',state.eligibility.represented,[['no','No - owner is filing'],['yes','Yes - agent or representative']])}
+            </div>
+            <button class="btn btn-forest mt-2" data-action="check-eligibility">Check my filing path</button>
+            ${state.eligibility.checked ? (issues.length ? `<div class="callout callout-danger mt-2"><div>${icon('alert',18)}</div><div><div class="callout-title">Pause the standard flow</div><div class="callout-copy"><ul style="margin:5px 0 0;padding-left:17px">${issues.map(x=>`<li>${escapeHTML(x)}</li>`).join('')}</ul></div><div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:11px"><button class="btn btn-danger-soft btn-sm" data-action="open-support">Review support options</button><a class="btn btn-secondary btn-sm" href="mailto:support@abodemoney.com?subject=Broward DIY Appeal Exception">Email support</a></div></div></div>` : `<div class="callout callout-success mt-2"><div>${icon('check',18)}</div><div><div class="callout-title">This fits the Broward DIY pilot</div><div class="callout-copy">One owner-filed residential value petition, one parcel, and a timely filing date. Continue to the worksheet.</div></div></div>`) : ''}
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-head"><div class="step-title"><div class="step-number">2</div><div><h3 class="mb-0">Review your filing worksheet</h3><div class="small">Copy these answers into the official county petition.</div></div></div>${state.filing.answersSaved?'<span class="pill pill-green">Reviewed</span>':''}</div>
+          <div class="step-body">
+            <div class="form-grid">
+              ${inputField('Taxpayer / owner name','account.owner',state.account.owner,'text')}
+              ${inputField('Email address','account.email',state.account.email,'email')}
+              ${inputField('Phone number','account.phone',state.account.phone,'tel')}
+              ${inputField('Mailing address','account.mailing',state.account.mailing||p.address,'text')}
+            </div>
+            <div class="section-title"><div><h3 style="font-size:16px">Why are you appealing?</h3><p>Select every reason supported by the Abode evidence package.</p></div></div>
+            <div class="choice-grid">
+              ${reasonChoice('The assessment appears higher than market value','The evidence package supports a lower January 1 market value.')}
+              ${reasonChoice('Comparable sales support a lower value','Nearby qualified sales indicate the assessment may be too high.')}
+              ${reasonChoice('Property facts are inaccurate','Square footage, condition, features, or other facts need correction.')}
+              ${reasonChoice('Condition or damage is not reflected','Documented condition issues were not reflected in the assessment.')}
+            </div>
+            <div class="section-title"><div><h3 style="font-size:16px">Copy-ready petition answers</h3><p>Aligned to the information needed for a DR-486-style value petition.</p></div><button class="btn btn-secondary btn-sm" data-action="copy-worksheet">Copy all</button></div>
+            <div class="worksheet">
+              ${worksheetRow('Taxpayer',state.account.owner)}
+              ${worksheetRow('Property address',p.address)}
+              ${worksheetRow('Parcel / folio number',p.parcel)}
+              ${worksheetRow('Property type',p.type)}
+              ${worksheetRow('Petition issue','Assessment / market value')}
+              ${worksheetRow('Reason',state.appealReasons.join('; ')||'Select at least one reason')}
+              ${worksheetRow('Estimated hearing time','15 minutes')}
+              ${worksheetRow('Attendance preference','Remote hearing, if offered')}
+            </div>
+            <button class="btn btn-forest mt-2" data-action="save-filing-answers">I reviewed these answers</button>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-head"><div class="step-title"><div class="step-number">3</div><div><h3 class="mb-0">Take the evidence package with you</h3><div class="small">Evidence creation is complete before this workflow begins.</div></div></div>${state.filing.evidenceDownloaded?'<span class="pill pill-green">Downloaded</span>':''}</div>
+          <div class="step-body">
+            <div class="document-card"><div class="doc-icon">PDF</div><div class="doc-meta"><div class="doc-name">Abode_Evidence_Package_${escapeHTML(p.parcel)}.pdf</div><div class="doc-sub">Evidence summary · comparable sales · property facts · condition support</div></div><button class="btn btn-secondary btn-sm" data-action="download-evidence">${icon('download',15)} Download demo</button></div>
+            <div class="data-note">The case brief places evidence creation and valuation analysis out of scope. This prototype treats the package as a completed upstream input and focuses on getting it filed, submitted on time, and presented clearly.</div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-head"><div class="step-title"><div class="step-number">4</div><div><h3 class="mb-0">Submit through Broward County</h3><div class="small">Keep Abode open in one tab and the official portal in another.</div></div></div>${state.filing.portalOpened?'<span class="pill pill-blue">Portal opened</span>':''}</div>
+          <div class="step-body">
+            <div class="portal-card">
+              <div class="portal-head"><div><h3 class="mb-0">Broward Value Adjustment Board portal</h3><div class="portal-url">bcvab.broward.org · Official county site</div></div><a class="btn btn-forest btn-sm" data-action="open-portal" href="https://bcvab.broward.org/" target="_blank" rel="noopener">Open official portal ${icon('external',14)}</a></div>
+              <div class="divider"></div>
+              <ol class="numbered-list">
+                <li><div><strong>Start a new 2026 petition.</strong><br><span class="text-muted">Choose real property and an assessment / value dispute.</span></div></li>
+                <li><div><strong>Enter the worksheet answers above.</strong><br><span class="text-muted">Review every field. The homeowner remains responsible for accuracy.</span></div></li>
+                <li><div><strong>Upload the Abode evidence package if the portal accepts it during filing.</strong><br><span class="text-muted">Save a copy for the later evidence exchange as well.</span></div></li>
+                <li><div><strong>Sign, attest, and pay Broward County's $25 fee.</strong><br><span class="text-muted">Abode does not sign or pay on your behalf.</span></div></li>
+                <li><div><strong>Save the confirmation and transaction number.</strong><br><span class="text-muted">Do not enter the county portal password back into Abode.</span></div></li>
+              </ol>
+            </div>
+            <div class="callout callout-warn mt-2"><div>${icon('clock',17)}</div><div><div class="callout-title">An informal conversation does not stop the clock</div><div class="callout-copy">You may discuss the assessment with the Property Appraiser, but that does not extend the VAB filing deadline.</div></div></div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-head"><div class="step-title"><div class="step-number">5</div><div><h3 class="mb-0">Close the loop in Abode</h3><div class="small">Capture proof that the homeowner completed the county step.</div></div></div>${state.filing.filed?'<span class="pill pill-green">Filed</span>':''}</div>
+          <div class="step-body">
+            ${state.filing.filed ? `<div class="result-panel"><div class="result-icon">${icon('check',30)}</div><h2 style="font-size:28px">Petition marked as filed</h2><p class="text-muted">Transaction ${escapeHTML(state.filing.transaction)} · Filed ${displayDate(state.filing.filedDate)}</p><button class="btn btn-forest mt-2" data-action="set-tab" data-tab="hearing">Prepare for the hearing ${icon('arrow',16)}</button></div>` : `<div class="form-grid">
+              ${inputField('County transaction number','filing.transaction',state.filing.transaction,'text','Do not enter the county password.')}
+              ${inputField('Date submitted','filing.filedDate',state.filing.filedDate||new Date().toISOString().slice(0,10),'date')}
+            </div>
+            <label class="check-row"><input type="checkbox" data-bind="filing.feePaid" ${state.filing.feePaid?'checked':''}/><span>I paid the county filing fee and saved the receipt.</span></label>
+            <label class="check-row"><input type="checkbox" data-bind="filing.attested" ${state.filing.attested?'checked':''}/><span>I reviewed, signed, and submitted the petition myself. I understand Abode did not file or represent me.</span></label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn btn-secondary" data-action="fill-demo-confirmation">Use demo confirmation</button><button class="btn btn-forest" data-action="mark-filed">Mark petition as filed</button></div>`}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderHearing(){
+      const due=subtractDays(state.hearing.date,15);
+      const complete = state.hearing.noticeRead && state.hearing.evidenceUploaded && state.hearing.scriptReviewed;
+      return `
+        <div class="section-title mt-0"><div><h2 style="font-size:31px">Prepare for the hearing</h2><p>Turn the county notice into deadlines, tasks, and a short homeowner script.</p></div><span class="pill ${complete?'pill-green':'pill-orange'}">${complete?'Ready':'Preparation'}</span></div>
+        ${!state.filing.filed?`<div class="callout callout-warn"><div>${icon('alert',18)}</div><div><div class="callout-title">Demo mode</div><div class="callout-copy">In production, this section unlocks after the homeowner records a filing confirmation. It remains visible here so the interview team can inspect the complete journey.</div></div></div>`:''}
+        <div class="grid grid-3 mt-3">
+          <div class="stat"><div class="stat-label">Hearing date</div><div class="stat-value" style="font-size:20px">${shortDate(state.hearing.date)}</div><div class="stat-sub">Replace demo date with county notice</div></div>
+          <div class="stat"><div class="stat-label">Evidence due</div><div class="stat-value stat-accent" style="font-size:20px">${shortDate(due)}</div><div class="stat-sub">15 days before the hearing</div></div>
+          <div class="stat"><div class="stat-label">Format</div><div class="stat-value" style="font-size:20px;text-transform:capitalize">${escapeHTML(state.hearing.format)}</div><div class="stat-sub">Confirm against the hearing notice</div></div>
+        </div>
+        <div class="grid grid-2 mt-3">
+          <div class="card">
+            <div class="card-head"><div><h3>Add the hearing notice</h3><p>The date drives the evidence countdown.</p></div><div class="card-icon">${icon('calendar')}</div></div>
+            <div class="form-grid">
+              ${inputField('Hearing date','hearing.date',state.hearing.date,'date','Demo date shown until the county notice arrives.')}
+              ${selectField('Hearing format','hearing.format',state.hearing.format,[['remote','Remote / video'],['phone','Telephone'],['in-person','In person']])}
+            </div>
+            <div class="callout callout-info mt-2"><div>${icon('clock',17)}</div><div><div class="callout-title">Evidence exchange deadline: ${shortDate(due)}</div><div class="callout-copy">Florida law requires both the petitioner and property appraiser to provide their evidence at least 15 days before the hearing.</div></div></div>
+            <button class="btn btn-secondary mt-2" data-action="download-calendar">${icon('calendar',16)} Add deadlines to calendar</button>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Your readiness checklist</h3><p>These are completion controls, not reading material.</p></div><div class="card-icon">${icon('check')}</div></div>
+            <label class="check-row"><input type="checkbox" data-bind="hearing.noticeRead" ${state.hearing.noticeRead?'checked':''}/><span>I reviewed the county hearing notice, date, time, format, and access instructions.</span></label>
+            <label class="check-row"><input type="checkbox" data-bind="hearing.evidenceUploaded" ${state.hearing.evidenceUploaded?'checked':''}/><span>I submitted the evidence by ${shortDate(due)} and saved proof of submission.</span></label>
+            <label class="check-row"><input type="checkbox" data-bind="hearing.scriptReviewed" ${state.hearing.scriptReviewed?'checked':''}/><span>I reviewed the five-minute explanation and know which exhibits support each point.</span></label>
+            <label class="check-row"><input type="checkbox" data-bind="hearing.calendarAdded" ${state.hearing.calendarAdded?'checked':''}/><span>I added the hearing and evidence deadlines to my calendar.</span></label>
+            ${complete?`<div class="callout callout-success mt-2"><div>${icon('check',17)}</div><div><div class="callout-title">Ready for the hearing</div><div class="callout-copy">The core preparation controls are complete.</div></div></div>`:''}
+          </div>
+        </div>
+        <div class="section-title"><div><h3>Your five-minute hearing outline</h3><p>Simple language, tied directly to the evidence package.</p></div><button class="btn btn-soft btn-sm" data-action="ask-hearing-chat">Practice with chatbot</button></div>
+        <div class="card">
+          <details open><summary>1. State the requested correction</summary><div class="details-body">“I am asking the Board to reduce the January 1 market value from ${money(state.property.justValue)} to ${money(state.property.supportedValue)} based on the evidence submitted.”</div></details>
+          <details><summary>2. Explain the strongest evidence first</summary><div class="details-body">Lead with the two or three pieces of evidence that most clearly support the lower value. Use exhibit names and page numbers rather than retelling the entire package.</div></details>
+          <details><summary>3. Address property differences</summary><div class="details-body">Explain material differences in size, condition, location, renovations, or sale circumstances. Focus on facts that affect January 1 market value.</div></details>
+          <details><summary>4. Answer questions directly</summary><div class="details-body">Pause, answer only the question asked, and return to the exhibit. Do not argue about the tax rate; the hearing is about the assessment.</div></details>
+          <details><summary>5. Close with the requested value</summary><div class="details-body">Restate the evidence-supported value and thank the magistrate. Keep the request specific.</div></details>
+        </div>
+        <div class="callout callout-warn mt-3"><div>${icon('alert',18)}</div><div><div class="callout-title">Do not forget the tax-payment rule</div><div class="callout-copy">A pending VAB petition does not automatically pause the tax bill. Check the county tax bill and required partial-payment rules before delinquency.</div></div></div>
+      `;
+    }
+
+    function renderResult(){
+      const p=state.property;
+      const final = state.result.finalValue || p.supportedValue;
+      const s=calcSavings(p,final);
+      return `
+        <div class="section-title mt-0"><div><h2 style="font-size:31px">Receive and record the result</h2><p>Close the operational loop and give the homeowner a clear outcome.</p></div><span class="pill ${state.result.closed?'pill-green':'pill-gray'}">${state.result.closed?'Closed':'Awaiting decision'}</span></div>
+        ${state.result.closed ? `<div class="card result-panel"><div class="result-icon">${icon('check',32)}</div><h2>${resultLabel(state.result.outcome)}</h2><p class="text-muted">Decision recorded ${displayDate(state.result.decisionDate)} · Final value ${money(state.result.finalValue)}</p><div class="grid grid-3 mt-3" style="text-align:left"><div class="stat"><div class="stat-label">Original value</div><div class="stat-value">${money(p.justValue)}</div></div><div class="stat"><div class="stat-label">Final value</div><div class="stat-value">${money(state.result.finalValue)}</div></div><div class="stat"><div class="stat-label">Estimated annual impact</div><div class="stat-value stat-accent">${money(s.savings)}</div></div></div><p class="small mt-2">Estimated tax impact remains subject to certified rates, exemptions, assessed-value caps, and the final tax bill.</p></div>` : `
+        <div class="grid grid-2 mt-3">
+          <div class="card">
+            <div class="card-head"><div><h3>Add the VAB decision</h3><p>Use the notice sent by Broward County.</p></div><div class="card-icon">${icon('file')}</div></div>
+            <div class="field"><label class="label">Outcome</label><select data-bind="result.outcome"><option value="">Select outcome</option><option value="granted" ${state.result.outcome==='granted'?'selected':''}>Reduction granted</option><option value="partial" ${state.result.outcome==='partial'?'selected':''}>Partial reduction</option><option value="no-change" ${state.result.outcome==='no-change'?'selected':''}>No change</option><option value="withdrawn" ${state.result.outcome==='withdrawn'?'selected':''}>Withdrawn or resolved before hearing</option><option value="other" ${state.result.outcome==='other'?'selected':''}>Other</option></select></div>
+            <div class="form-grid">
+              ${inputField('Decision date','result.decisionDate',state.result.decisionDate,'date')}
+              ${inputField('Final market value','result.finalValue',state.result.finalValue||p.supportedValue,'number')}
+            </div>
+            <div class="field"><label class="label">Notes</label><textarea data-bind="result.notes" placeholder="Optional summary of the decision">${escapeHTML(state.result.notes)}</textarea></div>
+            <div class="field"><label class="label">Decision file</label><input type="file" accept=".pdf,.jpg,.jpeg,.png"/><div class="field-help">Demo only - the file is not uploaded or stored.</div></div>
+            <button class="btn btn-forest" data-action="record-result">Record and close appeal</button>
+          </div>
+          <div class="card savings-card">
+            <div class="card-head"><div><h3>Projected outcome</h3><p>Updates as the final value changes.</p></div><div class="card-icon">${icon('chart')}</div></div>
+            <div class="info-row"><span>Original 2026 value</span><span>${money(p.justValue)}</span></div>
+            <div class="info-row"><span>Entered final value</span><span>${money(final)}</span></div>
+            <div class="info-row"><span>Value reduction</span><span>${money(Math.max(0,p.assessedValue-final))}</span></div>
+            <div class="divider"></div>
+            <div class="small">Estimated annual tax impact</div><div class="savings-number">${money(s.savings)}</div>
+            <div class="data-note">A decision capture rate matters operationally: without it, Abode cannot measure customer outcomes, identify county issues, or learn which users need follow-up.</div>
+          </div>
+        </div>`}
+      `;
+    }
+
+    function resultLabel(v){return ({granted:'Reduction granted',partial:'Partial reduction recorded','no-change':'No change to the assessment',withdrawn:'Petition withdrawn or resolved',other:'Appeal result recorded'})[v]||'Appeal result recorded'}
+    function inputField(label,path,value,type='text',help=''){
+      return `<div class="field"><label class="label">${escapeHTML(label)}</label><input type="${type}" data-bind="${path}" value="${escapeHTML(value||'')}"/>${help?`<div class="field-help">${escapeHTML(help)}</div>`:''}</div>`;
+    }
+    function selectField(label,path,value,options){
+      return `<div class="field"><label class="label">${escapeHTML(label)}</label><select data-bind="${path}">${options.map(o=>`<option value="${escapeHTML(o[0])}" ${value===o[0]?'selected':''}>${escapeHTML(o[1])}</option>`).join('')}</select></div>`;
+    }
+    function reasonChoice(value,desc){
+      const checked=state.appealReasons.includes(value);
+      return `<label class="choice"><input type="checkbox" data-reason="${escapeHTML(value)}" ${checked?'checked':''}/><span><strong>${escapeHTML(value)}</strong><span class="text-muted">${escapeHTML(desc)}</span></span></label>`;
+    }
+    function worksheetRow(k,v){return `<div class="worksheet-row"><div class="k">${escapeHTML(k)}</div><div class="v">${escapeHTML(v)}</div><button class="copy-btn" data-action="copy-text" data-copy="${escapeHTML(v)}">Copy</button></div>`}
+
+    function renderOperator(){
+      return `
+        <section class="operator-hero">
+          <div class="operator-hero-inner">
+            <div><div class="eyebrow">Launch recommendation</div><h1 style="font-size:48px">Start in Broward County.</h1><p>It gives Abode the best first test of a complete DIY journey: meaningful petition volume, a digitally mature filing path, enough hearings to validate the preparation product, high homeowner tax sensitivity, and public operational metrics.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px"><span class="pill pill-green">97% electronic in FY2024</span><span class="pill pill-orange">6,926 folios confirmed</span><span class="pill pill-blue">80% went to hearing</span></div></div>
+            <div class="score-ring"><div class="score-inner"><div class="score-value">93</div><div class="score-label">internal launch score</div></div></div>
+          </div>
+        </section>
+        <nav class="operator-nav" aria-label="Case questions">
+          <button data-action="scroll-section" data-section="q1">1 · Why DIY?</button>
+          <button data-action="scroll-section" data-section="q2">2 · Product</button>
+          <button data-action="scroll-section" data-section="q3">3 · Scale</button>
+          <button data-action="scroll-section" data-section="q4">4 · Metrics</button>
+          <button data-action="scroll-section" data-section="sources">Sources</button>
+        </nav>
+
+        <section id="q1" class="operator-section">
+          <div class="q-label"><span class="q-num">1</span> Why DIY?</div>
+          <h2>Sell certainty and control - not a thinner version of full service.</h2>
+          <p class="answer-lede">The paid homeowner already has a strong evidence package. The remaining problem is operational: knowing exactly what to do, when to do it, where to do it, and when a situation is no longer safe for self-service.</p>
+          <div class="grid grid-3">
+            <div class="card value-card"><div class="value-icon">${icon('user')}</div><h3>Homeowner value</h3><p>A lower-cost path with a personalized checklist, copy-ready answers, deadline protection, 24/7 procedural help, and the confidence that someone has translated the county process.</p></div>
+            <div class="card value-card"><div class="value-icon">${icon('chart')}</div><h3>Abode value</h3><p>A scalable service tier with lower variable labor, a broader addressable segment, structured completion data, and a clear upgrade path when the DIY boundary is reached.</p></div>
+            <div class="card value-card"><div class="value-icon">${icon('shield')}</div><h3>Trust mechanism</h3><p>The product is explicit about what Abode does not do. It never implies representation, never stores county credentials, and routes exceptions instead of improvising advice.</p></div>
+          </div>
+          <div class="launch-banner mt-3"><div><h3 class="mb-0">The product promise</h3><p>“We prepared your appeal. Now we make sure you know how to finish it yourself.”</p></div><button class="btn btn-forest" data-action="set-mode" data-mode="homeowner">Open homeowner experience ${icon('arrow',16)}</button></div>
+        </section>
+
+        <section id="q2" class="operator-section">
+          <div class="q-label"><span class="q-num">2</span> End-to-end DIY product</div>
+          <h2>Broward wins the first-launch decision.</h2>
+          <p class="answer-lede">The choice is based on the quality of the operating test, not just county size. A successful pilot needs users, a digital filing path, enough hearings to test the whole product, measurable county operations, and homeowner economics that make completion worthwhile.</p>
+          <div class="launch-banner"><div><h3 class="mb-0">Decision: one owner-filed residential value petition in Broward County</h3><p>Timely 2026 filing · one parcel · homeowner represents themselves · evidence package already created.</p></div><span class="pill pill-green">Recommended MVP scope</span></div>
+          <div class="card">
+            <div class="card-head"><div><h3>County launch scorecard</h3><p>Internal product judgment. Weighting: demand 30%, digital path 25%, homeowner economics 20%, measurability 15%, launch complexity 10%.</p></div><div class="card-icon">${icon('chart')}</div></div>
+            <table class="county-table">
+              <thead><tr><th>County</th><th>Internal score</th><th>What the diligence says</th><th>Launch call</th></tr></thead>
+              <tbody>
+                <tr class="winner"><td><strong>Broward</strong><br><span class="small">Recommended</span></td><td><strong>93 / 100</strong><div class="scorebar"><span style="width:93%"></span></div></td><td>97% electronic petition intake in FY2024; 6,926 folios confirmed; 80% proceeded to hearing; 2026 value deadline September 18; $25 filing fee; average municipality millage 19.8394.</td><td><span class="pill pill-green">Launch first</span><br><span class="small">Best complete-workflow test</span></td></tr>
+                <tr><td><strong>Miami-Dade</strong></td><td><strong>84 / 100</strong><div class="scorebar"><span style="width:84%"></span></div></td><td>Mature 2026 electronic portal; $15 per folio; transaction-number status and evidence upload. Contiguous undeveloped parcels and condominium group filings create a broader exception surface.</td><td><span class="pill pill-blue">Phase 2</span><br><span class="small">Large upside after playbook proves out</span></td></tr>
+                <tr><td><strong>Orange</strong></td><td><strong>70 / 100</strong><div class="scorebar"><span style="width:70%"></span></div></td><td>Same September 18 value deadline, but the 2026 online portal was still under construction as of July 25, 2026; alternative filing methods and a $50 applicable filing fee add launch friction.</td><td><span class="pill pill-orange">Wait</span><br><span class="small">Avoid changing portal risk in pilot</span></td></tr>
+              </tbody>
+            </table>
+            <div class="data-note"><strong>Why no “highest success-rate county” claim:</strong> public VAB summary data does not create a clean apples-to-apples homeowner win rate. Broward's 2023 public notice reports 25,756 assessment requests, 1,625 assessment reductions, and 18,560 withdrawals or settlements, but those categories mix property types and outcomes. I use this as an outcome and volume signal, not as a 6.3% “success rate.”</div>
+          </div>
+
+          <div class="section-title"><div><h3>Why the economics are tangible</h3><p>The product shows the homeowner a conservative estimate before asking them to complete the process.</p></div></div>
+          <div class="grid grid-4">
+            <div class="card metric-card"><div class="small">County activity</div><div class="metric-big">6,926</div><p>FY2024 folios confirmed by Broward VAB.</p></div>
+            <div class="card metric-card"><div class="small">Digital readiness</div><div class="metric-big">97%</div><p>FY2024 petitions received electronically.</p></div>
+            <div class="card metric-card"><div class="small">Full journey depth</div><div class="metric-big">80%</div><p>FY2024 petitions that went to a hearing.</p></div>
+            <div class="card metric-card"><div class="small">Illustrative $50K reduction</div><div class="metric-big">$992</div><p>Annual tax impact at the 19.8394 average millage rate.</p></div>
+          </div>
+
+          <div class="section-title"><div><h3>The operating boundary</h3><p>Every task has one accountable owner.</p></div></div>
+          <div class="boundary-table">
+            <div class="boundary-col"><h4><span class="pill pill-green">Abode product</span></h4><ul><li>Address and county match</li><li>Deadline, fee, and route</li><li>Copy-ready filing worksheet</li><li>Evidence-package handoff</li><li>Hearing countdown and script</li><li>Chatbot and email guidance</li><li>Result capture and reminders</li></ul></div>
+            <div class="boundary-col"><h4><span class="pill pill-blue">Homeowner</span></h4><ul><li>Review property and answers</li><li>Attest and sign</li><li>Submit on county portal</li><li>Pay the county fee</li><li>Save transaction details</li><li>Upload evidence</li><li>Attend hearing and record result</li></ul></div>
+            <div class="boundary-col"><h4><span class="pill pill-orange">Human exception</span></h4><ul><li>Late / good-cause filing</li><li>Multiple or joint parcels</li><li>Exemption or classification appeal</li><li>Owner / authorization mismatch</li><li>Portal or accessibility failure</li><li>Legal conclusion requested</li><li>Paid review or full-service upgrade</li></ul></div>
+          </div>
+
+          <div class="section-title"><div><h3>Why the chatbot belongs in the product</h3><p>It replaces procedural anxiety, not professional judgment.</p></div></div>
+          <div class="grid grid-2">
+            <div class="card"><h3>Service without hidden labor</h3><p class="text-muted" style="font-size:13px">Homeowners get stuck on small, repeatable questions - “Which value am I appealing?”, “Where is my folio number?”, “What happens at the hearing?” A source-grounded assistant answers these immediately, keeps the user in the workflow, and reduces email volume.</p><div class="callout callout-success mt-2"><div>${icon('bot',18)}</div><div><div class="callout-title">Production behavior</div><div class="callout-copy">Answers only from verified state/county content, displays the source and last-verified date, and logs unanswered questions for content improvement.</div></div></div></div>
+            <div class="card"><h3>Hard guardrails</h3><div class="info-row"><span>May explain</span><span>Procedure, fields, deadlines, status</span></div><div class="info-row"><span>May not do</span><span>Sign, submit, represent, or store credentials</span></div><div class="info-row"><span>Escalates</span><span>Late filing, multiple parcels, mismatch, legal request</span></div><div class="info-row"><span>Human options</span><span>Email, paid review call, full-service upgrade</span></div><button class="btn btn-forest btn-sm mt-2" data-action="toggle-chat">Try the chatbot</button></div>
+          </div>
+        </section>
+
+        <section id="q3" class="operator-section">
+          <div class="q-label"><span class="q-num">3</span> How to scale</div>
+          <h2>Build one workflow engine, then configure the local rules.</h2>
+          <p class="answer-lede">The common customer journey should not be rebuilt county by county. The scalable unit is a controlled county configuration with verified content, explicit exception rules, and an accountable update owner.</p>
+          <div class="system-stack">
+            <div class="stack-block"><div class="value-icon">${icon('home')}</div><h4>Common experience</h4><p>Address match, dashboard, filing worksheet, evidence handoff, reminders, hearing preparation, support, and result capture.</p></div>
+            <div class="stack-arrow">→</div>
+            <div class="stack-block"><div class="value-icon">${icon('settings')}</div><h4>State + county adapter</h4><p>Deadline formula, fee, portal, petition types, terminology, submission method, hearing rules, and exception routing.</p></div>
+            <div class="stack-arrow">→</div>
+            <div class="stack-block"><div class="value-icon">${icon('shield')}</div><h4>Operations control</h4><p>Source URLs, last verified date, content owner, second-person QA, change log, incident response, and pause switch.</p></div>
+          </div>
+          <div class="card mt-3">
+            <div class="card-head"><div><h3>County configuration record</h3><p>The exact fields an operator must complete before a county can go live.</p></div><span class="pill pill-green">Broward · Live-ready</span></div>
+            <div class="config-grid">
+              ${['Tax year','Parcel terminology','TRIM mailing date','Filing deadline','Filing fee','Portal URL','Allowed petition types','Joint parcel rules','Evidence method','Hearing modes','County contacts','Partial payment reminder','Source URLs','Last verified date','Content owner','QA status'].map(x=>`<div class="config-chip">${x}</div>`).join('')}
+            </div>
+          </div>
+          <div class="section-title"><div><h3>Rollout sequence</h3><p>Expand only after the prior phase is measurable and stable.</p></div></div>
+          <div class="rollout">
+            <div class="phase"><div class="phase-dot">1</div><h4>Broward pilot</h4><p>One parcel, residential value appeal, owner filed.</p></div>
+            <div class="phase"><div class="phase-dot">2</div><h4>Florida volume counties</h4><p>Miami-Dade, Hillsborough, Palm Beach, Orange once portals are verified.</p></div>
+            <div class="phase"><div class="phase-dot">3</div><h4>All 67 counties</h4><p>County onboarding checklist, QA queue, and annual TRIM refresh.</p></div>
+            <div class="phase"><div class="phase-dot">4</div><h4>50-state platform</h4><p>State process modules plus local filing adapters and compliance review.</p></div>
+          </div>
+          <div class="callout callout-info mt-3"><div>${icon('refresh',18)}</div><div><div class="callout-title">The most important scaling feature is the pause switch</div><div class="callout-copy">When a deadline, fee, portal, form, or evidence rule changes, operations must be able to pause a county immediately, update the configuration, complete two-person QA, and republish without engineering a new product.</div></div></div>
+        </section>
+
+        <section id="q4" class="operator-section">
+          <div class="q-label"><span class="q-num">4</span> Key metrics</div>
+          <h2>Measure whether paid homeowners finish - and exactly where they fail.</h2>
+          <p class="answer-lede">The north-star metric is not traffic or account creation. Marketing already acquired the user. Operations succeeds when an eligible paid DIY customer files an accepted petition on time.</p>
+          <div class="launch-banner"><div><div class="small">North-star metric</div><h3 class="mb-0">Accepted, on-time petitions ÷ eligible paid DIY customers</h3><p>County acceptance should be verified by confirmation capture, status check, or downstream county data - not inferred from a button click.</p></div><div class="metric-big" style="margin:0">≥ 70%</div></div>
+          <div class="grid grid-2">
+            <div class="card">
+              <div class="card-head"><div><h3>Illustrative 500-customer pilot funnel</h3><p>Proposed operating targets, not observed results.</p></div><span class="pill pill-orange">Target model</span></div>
+              <div class="funnel">
+                ${funnelRow('Paid, eligible DIY users',500,100)}
+                ${funnelRow('Property matched',475,95)}
+                ${funnelRow('Filing worksheet complete',425,85)}
+                ${funnelRow('County portal handoff',400,80)}
+                ${funnelRow('Confirmation captured',360,72)}
+                ${funnelRow('Accepted on time',350,70)}
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><div><h3>Operator health</h3><p>Metrics that keep a DIY product from becoming invisible full service.</p></div><div class="card-icon">${icon('chart')}</div></div>
+              <table class="metric-table"><thead><tr><th>Metric</th><th>Why it matters</th><th>Proposed threshold</th></tr></thead><tbody>
+                <tr><td><strong>Manual intervention rate</strong></td><td>Protects self-service economics</td><td>&lt; 15%</td></tr>
+                <tr><td><strong>Support contacts / user</strong></td><td>Shows friction and content gaps</td><td>&lt; 1.5</td></tr>
+                <tr><td><strong>Incorrect guidance incidents</strong></td><td>Core trust and compliance control</td><td>0 critical</td></tr>
+                <tr><td><strong>Portal failure rate</strong></td><td>Flags county changes quickly</td><td>&lt; 3%</td></tr>
+                <tr><td><strong>Evidence on-time rate</strong></td><td>Tests the hearing product</td><td>&gt; 85%</td></tr>
+                <tr><td><strong>Decision capture rate</strong></td><td>Enables outcome learning</td><td>&gt; 70%</td></tr>
+              </tbody></table>
+            </div>
+          </div>
+          <div class="section-title"><div><h3>Metric hierarchy</h3><p>Separate completion, quality, cost, and outcome.</p></div></div>
+          <div class="grid grid-4">
+            <div class="card metric-card"><div class="pill pill-green">Completion</div><h3 class="mt-2">Did they finish?</h3><p>Activation, worksheet completion, portal handoff, confirmation capture, evidence submission, hearing attendance.</p></div>
+            <div class="card metric-card"><div class="pill pill-red">Quality</div><h3 class="mt-2">Did the process work?</h3><p>Rejected or incomplete petition rate, missed deadlines, incorrect instructions, county content freshness.</p></div>
+            <div class="card metric-card"><div class="pill pill-orange">Economics</div><h3 class="mt-2">Did DIY stay DIY?</h3><p>Cost to serve, support minutes, chatbot containment, manual intervention, upgrade conversion, refunds.</p></div>
+            <div class="card metric-card"><div class="pill pill-blue">Outcome</div><h3 class="mt-2">What happened?</h3><p>Reduction granted, final value change, estimated tax impact, decision capture, homeowner confidence.</p></div>
+          </div>
+        </section>
+
+        <section id="sources" class="operator-section">
+          <div class="q-label">Research basis</div>
+          <h2>Verified sources and explicit assumptions</h2>
+          <p class="answer-lede">County rules and portals change. The production system should display a last-verified date, retain source links, assign a content owner, and require two-person QA before publication.</p>
+          <div class="card">
+            <div class="card-head"><div><h3>Sources used in this prototype</h3><p>Last reviewed July 25, 2026.</p></div><span class="pill pill-green">Official-first</span></div>
+            <div class="source-list">${SOURCES.map(s=>`<a class="source-link" href="${s.url}" target="_blank" rel="noopener"><span>${escapeHTML(s.name)}</span><span>${escapeHTML(s.label)} ${icon('external',11)}</span></a>`).join('')}</div>
+          </div>
+          <div class="data-note mt-2"><strong>Prototype assumptions:</strong> owner name is known; address is entered by the homeowner; property and value data shown are synthetic; the appeal is one owner-filed residential market-value petition; the evidence package already exists; no county credentials are stored; no petition is filed by Abode; all savings are estimates.</div>
+        </section>
+      `;
+    }
+    function funnelRow(label,count,pct){return `<div class="funnel-row"><span>${label}</span><div class="funnel-track"><div class="funnel-bar" style="width:${pct}%">${pct}%</div></div><strong>${num(count)}</strong></div>`}
+
+    function renderFooter(){
+      return `<footer class="footer"><span>Abode Appeal · Interactive operations case prototype · Synthetic customer/property data</span><span>Research last verified July 25, 2026 · <a href="#" data-action="set-mode" data-mode="operator">View methodology</a></span></footer>`;
+    }
+
+    function renderChat(){
+      const el=document.getElementById('chatDrawer');
+      el.className=`chat-drawer ${state.chatOpen?'open':''}`;
+      el.innerHTML=`
+        <div class="chat-head"><div class="chat-head-title"><div class="bot-avatar">A</div><div><h4>Abode Assistant</h4><p>Procedure-focused · Broward 2026</p></div></div><button class="chat-close" data-action="toggle-chat">×</button></div>
+        <div class="chat-boundary"><strong>Boundary:</strong> I explain verified process and next steps. I do not file, sign, represent you, provide a legal conclusion, or ask for your county password.</div>
+        <div class="chat-messages" id="chatMessages">${state.chatMessages.map(m=>`<div class="msg ${m.from}">${escapeHTML(m.text)}${m.source?`<div class="source-tag">${escapeHTML(m.source)}</div>`:''}</div>`).join('')}</div>
+        <div class="chat-suggestions">
+          ${['What is my deadline?','What does Abode do?','I have two parcels','Help me prepare for the hearing'].map(q=>`<button class="suggestion" data-action="chat-question" data-question="${escapeHTML(q)}">${escapeHTML(q)}</button>`).join('')}
+        </div>
+        <div class="chat-input"><input id="chatInput" placeholder="Ask about your next step"/><button class="send-btn" data-action="send-chat">→</button></div>
+        <div class="chat-escalate"><a class="btn btn-secondary" href="mailto:support@abodemoney.com?subject=Broward DIY Appeal Help">${icon('mail',13)} Email</a><button class="btn btn-soft" data-action="open-support">${icon('calendar',13)} Human help</button></div>`;
+      requestAnimationFrame(()=>{const m=document.getElementById('chatMessages');if(m)m.scrollTop=m.scrollHeight;});
+    }
+
+    function renderModal(){
+      const el=document.getElementById('supportModal');
+      el.className=`modal-backdrop ${state.modalOpen?'open':''}`;
+      el.innerHTML=`<div class="modal">
+        <div class="modal-head"><div><div class="eyebrow">Support boundary</div><h2 style="font-size:28px">Choose the level of help</h2><p class="text-muted" style="font-size:13px;margin-bottom:0">DIY includes procedural guidance. Human review and representation are separate service levels.</p></div><button class="icon-btn" data-action="close-support">×</button></div>
+        <div class="package-grid">
+          ${packageCard('DIY Guide','Included','Personalized workflow, chatbot, reminders, and email support. Abode does not file or represent you.')}
+          ${packageCard('Expert Review','Paid add-on','A short scheduled call to review your filing path and unanswered procedural questions.')}
+          ${packageCard('Full-Service Upgrade','Eligibility-based quote','Request Abode filing and representation where available. Separate scope and authorization.')}
+        </div>
+        ${state.support.package==='Expert Review'?`<div class="card mt-3"><h3>Schedule a review call</h3><div class="form-grid">${inputField('Preferred date','support.callDate',state.support.callDate||'2026-08-03','date')}${selectField('Preferred time','support.callTime',state.support.callTime||'10:00',[['10:00','10:00 AM ET'],['13:00','1:00 PM ET'],['16:00','4:00 PM ET']])}</div><button class="btn btn-forest" data-action="schedule-call">Request this time</button></div>`:''}
+        ${state.support.package==='Full-Service Upgrade'?`<div class="callout callout-info mt-3"><div>${icon('phone',18)}</div><div><div class="callout-title">Upgrade request</div><div class="callout-copy">A team member would confirm county coverage, deadlines, authorization, pricing, and whether Abode can take the case before promising representation.</div><button class="btn btn-forest btn-sm mt-2" data-action="request-upgrade">Request eligibility review</button></div></div>`:''}
+        ${state.support.scheduled?`<div class="callout callout-success mt-3"><div>${icon('check',18)}</div><div><div class="callout-title">Call request saved</div><div class="callout-copy">${displayDate(state.support.callDate)} at ${escapeHTML(state.support.callTime)} ET. Prototype only - no calendar invitation was sent.</div></div></div>`:''}
+      </div>`;
+    }
+    function packageCard(name,price,copy){return `<button class="package ${state.support.package===name?'selected':''}" data-action="select-package" data-package="${name}" style="text-align:left"><div class="tag">${name==='DIY Guide'?'Current plan':name==='Expert Review'?'Optional confidence':'Done-for-you option'}</div><h3>${name}</h3><p>${copy}</p><div class="package-price">${price}</div><span class="btn btn-secondary btn-sm">${state.support.package===name?'Selected':'Choose'}</span></button>`}
+
+    function createPropertyFromInput(input){
+      const exact=DEMO_PROPERTIES.find(p=>p.address.toLowerCase()===input.toLowerCase());
+      if(exact) return structuredClone(exact);
+      const lower=input.toLowerCase();
+      let city='Fort Lauderdale', millage=18.5714;
+      if(lower.includes('hollywood')){city='Hollywood';millage=22.0571}
+      else if(lower.includes('pompano')){city='Pompano Beach';millage=20.4018}
+      else if(lower.includes('plantation')){city='Plantation';millage=20.0675}
+      let hash=0; for(let i=0;i<input.length;i++) hash=((hash<<5)-hash)+input.charCodeAt(i),hash|=0;
+      const base=460000+(Math.abs(hash)%260000);
+      const gap=40000+(Math.abs(hash)%45000);
+      return {id:'generated',owner:state.account.owner,address:input,city,county:'Broward County',parcel:`50${String(Math.abs(hash)%10000).padStart(4,'0')}-${String(Math.abs(hash)%99).padStart(2,'0')}-${String(Math.abs(hash*3)%99).padStart(2,'0')}-${String(Math.abs(hash*7)%9999).padStart(4,'0')}`,type:'Single-family residence',justValue:base,assessedValue:base,exemptions:50000,supportedValue:base-gap,millage,lat:'26.12',lng:'-80.14',note:'Generated synthetic record - production would verify against Broward County parcel data.'};
+    }
+
+    function showToast(text){
+      const t=document.getElementById('toast');t.textContent=text;t.classList.add('show');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>t.classList.remove('show'),2400);
+    }
+    async function copyText(text){
+      try{await navigator.clipboard.writeText(text);showToast('Copied to clipboard');}
+      catch(e){showToast('Copy is unavailable in this browser');}
+    }
+    function worksheetText(){
+      const p=state.property;
+      return `ABODE BROWARD DIY FILING WORKSHEET\nTaxpayer: ${state.account.owner}\nProperty address: ${p.address}\nParcel / folio: ${p.parcel}\nProperty type: ${p.type}\nIssue: Assessment / market value\nReason: ${state.appealReasons.join('; ')}\nEstimated hearing time: 15 minutes\nAttendance preference: Remote, if offered\n2026 deadline: September 18, 2026\nCounty filing fee: $25\n\nReview every answer against the official county petition. The homeowner remains responsible for signing and submitting.`;
+    }
+    function downloadBlob(name,content,type='text/plain'){
+      const blob=new Blob([content],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),500);
+    }
+    function downloadEvidence(){
+      const p=state.property;
+      const content=`ABODE EVIDENCE PACKAGE - INTERVIEW PROTOTYPE\n\nProperty: ${p.address}\nFolio: ${p.parcel}\nCurrent 2026 just value: ${money(p.justValue)}\nEvidence-supported value: ${money(p.supportedValue)}\n\nDEMO CONTENT ONLY\nThe actual case brief assumes the evidence package has already been created. A production file would contain the evidence summary, comparable sales, property facts, condition documentation, and exhibit index.\n`;
+      downloadBlob(`Abode_Evidence_Package_${p.parcel}.txt`,content);
+      state.filing.evidenceDownloaded=true;saveState();render();showToast('Demo evidence package downloaded');
+    }
+    function downloadCalendar(){
+      if(!state.hearing.date){showToast('Add the hearing date first');return}
+      const due=subtractDays(state.hearing.date,15);
+      const dateToICS=d=>d.replaceAll('-','');
+      const ics=`BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Abode Appeal//DIY MVP//EN\nBEGIN:VEVENT\nUID:evidence-${Date.now()}@abode\nDTSTART;VALUE=DATE:${dateToICS(due)}\nSUMMARY:Broward appeal evidence deadline\nDESCRIPTION:Submit and save proof of the evidence exchange.\nEND:VEVENT\nBEGIN:VEVENT\nUID:hearing-${Date.now()}@abode\nDTSTART;VALUE=DATE:${dateToICS(state.hearing.date)}\nSUMMARY:Broward property tax appeal hearing\nDESCRIPTION:Bring the Abode evidence package and hearing outline.\nEND:VEVENT\nEND:VCALENDAR`;
+      downloadBlob('Abode_Broward_Appeal_Deadlines.ics',ics,'text/calendar');
+      state.hearing.calendarAdded=true;saveState();render();showToast('Calendar file created');
+    }
+
+    function chatReply(q){
+      const s=q.toLowerCase();
+      if(s.includes('deadline')||s.includes('when')) return {text:'For this 2026 Broward value appeal, the timely filing deadline is September 18, 2026. An informal conversation with the Property Appraiser does not extend that deadline.',source:'BCPA + Florida DOR · verified Jul 25, 2026'};
+      if(s.includes('two parcel')||s.includes('multiple')||s.includes('joint')||s.includes('condo')) return {text:'Multiple, joint, or grouped parcels are outside the standard one-parcel DIY path. I would pause the workflow and route this to the exception queue so the correct county petition method and fee can be reviewed.',source:'Exception rule · human review required'};
+      if(s.includes('abode')||s.includes('file for')||s.includes('do you')) return {text:'Abode provides the personalized instructions, copy-ready worksheet, evidence-package handoff, reminders, hearing preparation, chatbot, and email support. You review, sign, submit, pay the county fee, upload evidence, and attend the hearing yourself.',source:'DIY service boundary'};
+      if(s.includes('hearing')||s.includes('prepare')) return {text:'Start with the requested value, present the strongest two or three exhibits, explain material property differences, answer questions directly, and close by restating the value you are requesting. Evidence must be exchanged at least 15 days before the hearing.',source:'Florida Statute 194.011 + Abode guide'};
+      if(s.includes('fee')||s.includes('$25')||s.includes('cost')) return {text:'Broward County lists a $25 VAB filing fee for the 2026 cycle. It is paid directly to the county during filing and is separate from the Abode DIY purchase.',source:'Broward VAB · verified Jul 25, 2026'};
+      if(s.includes('late')||s.includes('miss')) return {text:'A late value petition may require a good-cause review. That is a defined exception, so I would not tell you to continue through the standard flow. Use email support or request a human review now.',source:'Exception rule · human review required'};
+      if(s.includes('save')||s.includes('savings')) return {text:`The current prototype estimates about ${money(calcSavings().savings)} in annual tax impact if the evidence-supported value is granted. It is not guaranteed and depends on the final decision, exemptions, capped assessment, taxing districts, and certified millage.`,source:'Simplified estimate · not a promise'};
+      if(s.includes('reason')||s.includes('appeal')) return {text:'This MVP covers a challenge to the property’s January 1 market value. It does not use the standard path for an exemption denial, classification, portability, tax deferral, or a complaint about the tax rate.',source:'BCPA + Florida DOR'};
+      return {text:'I can explain the Broward filing deadline, county fee, copy-ready petition answers, evidence deadline, hearing steps, and the DIY service boundary. For a late petition, multiple parcels, ownership mismatch, or a legal conclusion, I will route you to a human.',source:'Abode verified knowledge base'};
+    }
+    function sendChat(question){
+      const q=(question||'').trim();if(!q)return;
+      state.chatMessages.push({from:'user',text:q});
+      const r=chatReply(q);state.chatMessages.push({from:'bot',text:r.text,source:r.source});
+      state.chatOpen=true;saveState();renderChat();
+    }
+
+    document.addEventListener('click', e=>{
+      const a=e.target.closest('[data-action]'); if(!a)return;
+      const action=a.dataset.action;
+      if(action==='set-mode'){state.mode=a.dataset.mode;state.modalOpen=false;saveState();render();window.scrollTo({top:0,behavior:'smooth'});}
+      else if(action==='reset-demo'){if(confirm('Reset the prototype to its starting state?')){state=structuredClone(DEFAULT_STATE);localStorage.removeItem('abodeAppealMvp');render();showToast('Prototype reset');}}
+      else if(action==='use-demo-property'){state.property=structuredClone(DEMO_PROPERTIES[0]);state.account.mailing=state.property.address;saveState();render();showToast('Demo property matched');}
+      else if(action==='search-property'){
+        const input=document.getElementById('addressInput');const val=input?input.value.trim():'';
+        if(!val){showToast('Enter a property address');return}
+        if(!/fl|florida|fort lauderdale|hollywood|pompano|plantation|davie|broward/i.test(val)){showToast('This pilot currently supports Broward County addresses');return}
+        state.property=createPropertyFromInput(val);state.account.mailing=val;saveState();render();showToast('Property mapped to Broward County');
+      }
+      else if(action==='change-property'){state.property=null;state.homeownerTab='overview';saveState();render();}
+      else if(action==='set-tab'){state.homeownerTab=a.dataset.tab;saveState();render();window.scrollTo({top:0,behavior:'smooth'});}
+      else if(action==='check-eligibility'){state.eligibility.checked=true;saveState();render();showToast(eligibilityIssues().length?'Exception route identified':'Standard DIY path confirmed');}
+      else if(action==='save-filing-answers'){if(!state.appealReasons.length){showToast('Select at least one appeal reason');return}state.filing.answersSaved=true;saveState();render();showToast('Filing worksheet marked as reviewed');}
+      else if(action==='copy-text'){copyText(a.dataset.copy||'');}
+      else if(action==='copy-worksheet'){copyText(worksheetText());}
+      else if(action==='download-evidence'){downloadEvidence();}
+      else if(action==='open-portal'){state.filing.portalOpened=true;saveState();setTimeout(render,100);}
+      else if(action==='fill-demo-confirmation'){state.filing.transaction='BRW-2026-10482';state.filing.filedDate=new Date().toISOString().slice(0,10);state.filing.feePaid=true;state.filing.attested=true;saveState();render();}
+      else if(action==='mark-filed'){
+        if(!state.filing.transaction.trim()||!state.filing.filedDate||!state.filing.feePaid||!state.filing.attested){showToast('Complete the transaction, date, fee, and attestation fields');return}
+        state.filing.filed=true;saveState();render();showToast('Petition marked as filed');
+      }
+      else if(action==='download-calendar'){downloadCalendar();}
+      else if(action==='record-result'){
+        if(!state.result.outcome||!state.result.decisionDate||!state.result.finalValue){showToast('Add the outcome, decision date, and final value');return}
+        state.result.closed=true;saveState();render();showToast('Appeal result recorded');
+      }
+      else if(action==='toggle-chat'){state.chatOpen=!state.chatOpen;saveState();renderChat();}
+      else if(action==='chat-question'){sendChat(a.dataset.question||'');}
+      else if(action==='send-chat'){const i=document.getElementById('chatInput');sendChat(i?i.value:'');}
+      else if(action==='ask-hearing-chat'){state.chatOpen=true;sendChat('Help me prepare for the hearing');}
+      else if(action==='open-support'){state.modalOpen=true;saveState();renderModal();}
+      else if(action==='close-support'){state.modalOpen=false;saveState();renderModal();}
+      else if(action==='select-package'){state.support.package=a.dataset.package;state.support.scheduled=false;saveState();renderModal();}
+      else if(action==='schedule-call'){if(!state.support.callDate||!state.support.callTime){showToast('Choose a date and time');return}state.support.scheduled=true;saveState();renderModal();showToast('Call request saved');}
+      else if(action==='request-upgrade'){showToast('Full-service eligibility request saved');state.modalOpen=false;saveState();renderModal();}
+      else if(action==='scroll-section'){const el=document.getElementById(a.dataset.section);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
+    });
+
+    document.addEventListener('input', e=>{
+      const el=e.target;
+      if(el.dataset.bind && el.type!=='checkbox' && el.tagName!=='SELECT') setPath(el.dataset.bind,el.value);
+    });
+
+    document.addEventListener('change', e=>{
+      const el=e.target;
+      if(el.dataset.bind){
+        const value=el.type==='checkbox'?el.checked:el.value;
+        setPath(el.dataset.bind,value);
+        if(el.dataset.bind.startsWith('hearing.')) setTimeout(render,0);
+        else if(el.dataset.bind.startsWith('eligibility.')){state.eligibility.checked=false;saveState();}
+      }
+      if(el.dataset.reason){
+        if(el.checked&&!state.appealReasons.includes(el.dataset.reason))state.appealReasons.push(el.dataset.reason);
+        if(!el.checked)state.appealReasons=state.appealReasons.filter(x=>x!==el.dataset.reason);
+        saveState();
+      }
+    });
+    document.addEventListener('keydown',e=>{
+      if(e.key==='Enter'&&e.target.id==='addressInput'){e.preventDefault();document.querySelector('[data-action="search-property"]')?.click();}
+      if(e.key==='Enter'&&e.target.id==='chatInput'){e.preventDefault();document.querySelector('[data-action="send-chat"]')?.click();}
+      if(e.key==='Escape'){state.chatOpen=false;state.modalOpen=false;saveState();renderChat();renderModal();}
+    });
+    document.getElementById('supportModal').addEventListener('click',(e)=>{if(e.target===e.currentTarget){state.modalOpen=false;saveState();renderModal();}});
+
+    render();
+  })();
+  </script>
+</body>
+</html>
