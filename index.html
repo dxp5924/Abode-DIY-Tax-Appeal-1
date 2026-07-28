@@ -125,12 +125,14 @@
     .avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--mint);color:var(--forest);font-weight:850}
     .small{font-size:12px;color:var(--muted)}
     .label{font-size:13px;font-weight:800;color:var(--ink-2);display:block;margin-bottom:7px}
+    .req{color:var(--red);font-weight:900;margin-left:2px}
     .field{margin-bottom:16px}
     .input-wrap{position:relative}
     input,select,textarea{
       width:100%;border:1px solid #ccd8d2;background:white;color:var(--ink);
       border-radius:13px;padding:13px 14px;outline:none;transition:.16s border,.16s box-shadow;
     }
+    input::placeholder,textarea::placeholder{font-style:italic;color:#95a5a1}
     input:focus,select:focus,textarea:focus{border-color:var(--forest-2);box-shadow:0 0 0 4px rgba(35,89,82,.10)}
     input[readonly]{background:#f3f5f2;color:#526460}
     textarea{min-height:105px;resize:vertical}
@@ -262,6 +264,7 @@
     .worksheet-row .v{font-weight:760;min-width:0;overflow-wrap:anywhere}
     .copy-btn{border:0;background:var(--mint-2);color:var(--forest);font-size:11px;font-weight:800;border-radius:8px;padding:6px 8px}
     .document-card{border:1px solid #d8e1dc;background:#fbfcfa;border-radius:15px;padding:14px;display:flex;align-items:center;gap:13px}
+    .document-card + .document-card{margin-top:10px}
     .doc-icon{width:42px;height:48px;border-radius:10px;background:var(--mint);display:grid;place-items:center;color:var(--forest);font-weight:900;flex:0 0 auto}
     .doc-meta{min-width:0;flex:1}
     .doc-name{font-size:13px;font-weight:830;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -432,16 +435,21 @@
   <div id="supportModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Support options"></div>
   <div id="toast" class="toast" role="status"></div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
   (() => {
     'use strict';
 
+    const PORTAL_URL = 'https://bcvab.broward.org/AxiaWeb2025/Default.aspx';
+
     const SOURCES = [
+      {name:'Broward VAB e-filing portal (Axia) - $15 fee, filing window, partial-payment rule, status check', label:'Official county', url:PORTAL_URL},
       {name:'Broward County Property Appraiser - 2026 appeals and deadline', label:'Official county', url:'https://bcpa.net/value.asp'},
-      {name:'Broward County VAB - filing fee and process', label:'Official county', url:'https://www.broward.org/VAB/Pages/Welcome.aspx'},
+      {name:'Broward County VAB - office, contacts, and process', label:'Official county', url:'https://www.broward.org/VAB/Pages/Welcome.aspx'},
       {name:'Broward FY2026 adopted operating budget - VAB workload', label:'Official county', url:'https://www.broward.org/Budget/Documents/FY26/FY26%20Adopted%20Budget/FY26_Adopted_Operating.html'},
       {name:'Broward Property Appraiser - average millage estimator', label:'Official county', url:'https://bcpa.net/taxcalc.asp'},
       {name:'Broward Property Appraiser - 2025 municipal millage table', label:'Official county', url:'https://bcpa.net/millage.asp'},
+      {name:'Florida DOR - Form DR-486 petition to the VAB', label:'Official state', url:'https://floridarevenue.com/property/documents/dr486.pdf'},
       {name:'Florida Department of Revenue - disagreeing with property value', label:'Official state', url:'https://floridarevenue.com/property/Pages/Taxpayers_PropertyValueDisagree.aspx'},
       {name:'Florida Statutes section 194.011 - filing and evidence exchange', label:'Official state', url:'https://leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0100-0199%2F0194%2FSections%2F0194.011.html'},
       {name:'Miami-Dade 2026 VAB portal', label:'Comparator', url:'https://vabprod.miamidade.gov/axiaweb2026/'},
@@ -451,49 +459,96 @@
 
     const DEMO_PROPERTIES = [
       {
-        id:'ftl-demo', owner:'Jordan Rivera', address:'410 Harbor Pine Lane, Fort Lauderdale, FL 33301', city:'Fort Lauderdale', county:'Broward County',
+        id:'ftl-demo', owner:'', address:'410 Harbor Pine Lane, Fort Lauderdale, FL 33301', city:'Fort Lauderdale', county:'Broward County',
         parcel:'5042-11-09-0410', type:'Single-family residence', justValue:615000, assessedValue:615000, exemptions:50000,
         supportedValue:545000, millage:18.5714, lat:'26.122', lng:'-80.137', note:'Synthetic demo property - not a live county parcel.'
       },
       {
-        id:'holly-demo', owner:'Jordan Rivera', address:'2250 Palm Shore Avenue, Hollywood, FL 33020', city:'Hollywood', county:'Broward County',
+        id:'holly-demo', owner:'', address:'2250 Palm Shore Avenue, Hollywood, FL 33020', city:'Hollywood', county:'Broward County',
         parcel:'5142-15-18-0720', type:'Townhome', justValue:492000, assessedValue:492000, exemptions:50000,
         supportedValue:442000, millage:22.0571, lat:'26.011', lng:'-80.149', note:'Synthetic demo property - not a live county parcel.'
       },
       {
-        id:'pomp-demo', owner:'Jordan Rivera', address:'980 Cypress Marina Drive, Pompano Beach, FL 33060', city:'Pompano Beach', county:'Broward County',
+        id:'pomp-demo', owner:'', address:'980 Cypress Marina Drive, Pompano Beach, FL 33060', city:'Pompano Beach', county:'Broward County',
         parcel:'4942-01-28-1630', type:'Condominium unit', justValue:388000, assessedValue:388000, exemptions:25000,
         supportedValue:348000, millage:20.3823, lat:'26.237', lng:'-80.125', note:'Synthetic demo property - not a live county parcel.'
       }
     ];
 
+    const DEFAULT_APPEAL = {
+      id:'', createdAt:'',
+      property:null,
+      eligibility:{singleParcel:'yes', appealType:'value', onTime:'yes', ownerMatch:'yes', represented:'no', checked:false},
+      appealReasons:['The assessment appears higher than market value'],
+      filing:{answersSaved:false, evidenceDownloaded:false, portalOpened:false, transaction:'', filedDate:'', feePaid:false, attested:false, receiptAttached:false, receiptName:'', filed:false},
+      hearing:{date:'', time:'', format:'remote', noticeFile:'', noticeRead:false, evidenceUploaded:false, scriptReviewed:false, calendarAdded:false},
+      result:{outcome:'', decisionDate:'', finalValue:'', notes:'', closed:false}
+    };
+
     const DEFAULT_STATE = {
       mode:'homeowner',
       homeownerTab:'overview',
-      property:null,
-      account:{owner:'Jordan Rivera', email:'jordan.rivera@example.com', phone:'(954) 555-0148', mailing:''},
-      eligibility:{singleParcel:'yes', appealType:'value', onTime:'yes', ownerMatch:'yes', represented:'no', checked:false},
-      appealReasons:['The assessment appears higher than market value'],
-      filing:{answersSaved:false, evidenceDownloaded:false, portalOpened:false, transaction:'', filedDate:'', feePaid:false, attested:false, filed:false},
-      hearing:{date:'2026-11-12', format:'remote', noticeRead:false, evidenceUploaded:false, scriptReviewed:false, calendarAdded:false},
-      result:{outcome:'', decisionDate:'', finalValue:'', notes:'', closed:false},
-      support:{package:'DIY Guide', callDate:'', callTime:'', scheduled:false},
+      appeals:[],
+      activeId:null,
+      account:{created:false, owner:'', email:'', phone:'', mailing:'', mailingSame:false},
+      support:{package:'DIY Guide', callDate:'', callTime:'', scheduled:false, upgradeRequested:false},
       chatOpen:false,
       modalOpen:false,
       chatMessages:[
-        {from:'bot', text:'Hi Jordan - I can explain your Broward filing steps, deadlines, hearing preparation, and when to escalate. I cannot file, sign, or make a legal conclusion for you.', source:'Verified Broward + Florida guidance'}
+        {from:'bot', text:'Hi there - I can explain your Broward filing steps, deadlines, fees, hearing preparation, and when to escalate. I cannot file, sign, or make a legal conclusion for you.', source:'Verified Broward + Florida guidance'}
       ]
     };
+
+    function activeAppeal(){ return state.appeals.find(a=>a.id===state.activeId)||null; }
+    function newAppeal(property){
+      const a=structuredClone(DEFAULT_APPEAL);
+      a.id='ap-'+Date.now().toString(36)+Math.floor(Math.random()*999);
+      a.createdAt=new Date().toISOString();
+      a.property=property;
+      state.appeals.push(a);
+      state.activeId=a.id;
+      state.homeownerTab='overview';
+      return a;
+    }
+    function shortAddr(a){ const s=(a&&a.property&&a.property.address)||'New property'; return s.split(',')[0]; }
+    // Per-appeal fields are exposed on `state` as live proxies to the active appeal,
+    // so the whole workflow reads/writes the right record automatically.
+    const APPEAL_FIELDS=['property','eligibility','appealReasons','filing','hearing','result'];
+    function attachProxies(st){
+      APPEAL_FIELDS.forEach(f=>Object.defineProperty(st,f,{
+        configurable:true, enumerable:false,
+        get(){ const a=st.appeals.find(x=>x.id===st.activeId); return a?a[f]:(f==='appealReasons'?[]:null); },
+        set(v){ const a=st.appeals.find(x=>x.id===st.activeId); if(a)a[f]=v; }
+      }));
+      return st;
+    }
 
     let state = loadState();
 
     function loadState(){
       try{
-        const raw = localStorage.getItem('abodeAppealMvp');
-        if(!raw) return structuredClone(DEFAULT_STATE);
-        const saved = JSON.parse(raw);
-        return deepMerge(structuredClone(DEFAULT_STATE), saved);
-      } catch(e){ return structuredClone(DEFAULT_STATE); }
+        let saved=null;
+        const raw = localStorage.getItem('abodeAppealMvpBrowardV3');
+        if(raw){ saved = JSON.parse(raw); }
+        else {
+          const old = localStorage.getItem('abodeAppealMvpBrowardV2');
+          if(old){
+            const o=JSON.parse(old);
+            saved={mode:o.mode,homeownerTab:o.homeownerTab,account:o.account,support:o.support,chatMessages:o.chatMessages,appeals:[],activeId:null};
+            if(o.property){
+              const a=structuredClone(DEFAULT_APPEAL);
+              a.id='ap-migrated'; a.createdAt=new Date().toISOString();
+              a.property=o.property; a.eligibility=o.eligibility||a.eligibility; a.appealReasons=o.appealReasons||a.appealReasons;
+              a.filing=o.filing||a.filing; a.hearing=Object.assign({},a.hearing,o.hearing||{}); a.result=o.result||a.result;
+              saved.appeals=[a]; saved.activeId=a.id;
+            }
+          }
+        }
+        if(!saved) return attachProxies(structuredClone(DEFAULT_STATE));
+        const st = deepMerge(structuredClone(DEFAULT_STATE), saved);
+        st.appeals=(saved.appeals||[]).map(a=>deepMerge(structuredClone(DEFAULT_APPEAL),a));
+        return attachProxies(st);
+      } catch(e){ return attachProxies(structuredClone(DEFAULT_STATE)); }
     }
     function deepMerge(target, source){
       if(!source || typeof source !== 'object') return target;
@@ -505,7 +560,7 @@
       return target;
     }
     function saveState(){
-      try{ localStorage.setItem('abodeAppealMvp', JSON.stringify(state)); }catch(e){}
+      try{ localStorage.setItem('abodeAppealMvpBrowardV3', JSON.stringify(state)); }catch(e){}
     }
     function setPath(path, value){
       const parts = path.split('.'); let cur = state;
@@ -518,6 +573,8 @@
     }
     function money(n){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(Number(n)||0)}
     function num(n){return new Intl.NumberFormat('en-US').format(Number(n)||0)}
+    function firstName(){return (state.account.owner||'there').trim().split(' ')[0]||'there'}
+    function initials(){const parts=(state.account.owner||'A').trim().split(' ');return ((parts[0]||'A')[0]+(parts[1]?parts[1][0]:'')).toUpperCase()}
     function displayDate(v){
       if(!v) return 'Not entered';
       const d = new Date(v+'T12:00:00');
@@ -552,15 +609,17 @@
       if(state.filing.filed) return 58;
       if(state.filing.answersSaved) return 34;
       if(state.eligibility.checked) return 23;
-      if(state.property) return 12;
+      if(state.property) return 14;
+      if(state.account.created) return 6;
       return 0;
     }
     function nextAction(){
+      if(!state.account.created) return {title:'Create your Abode account',copy:'Set up your login so reminders, support, and your appeal record stay connected to you.',tab:'overview'};
       if(!state.property) return {title:'Find your property',copy:'Enter the property address to map the correct county, deadline, fee, and filing path.',tab:'overview'};
       if(!state.eligibility.checked) return {title:'Confirm this DIY path',copy:'Answer five short questions so we can flag situations that need a different filing route.',tab:'file'};
       if(!state.filing.answersSaved) return {title:'Review your filing worksheet',copy:'Confirm the information you will copy into the Broward County petition portal.',tab:'file'};
-      if(!state.filing.filed) return {title:'Submit through Broward County',copy:'Open the official portal, submit the petition yourself, then return with the transaction number.',tab:'file'};
-      if(!state.hearing.evidenceUploaded) return {title:'Prepare for the hearing',copy:'Add the hearing date, calculate the evidence deadline, and complete the hearing checklist.',tab:'hearing'};
+      if(!state.filing.filed) return {title:'Submit through Broward County',copy:'Open the official portal, submit the petition yourself, then return with the transaction number and receipt.',tab:'file'};
+      if(!state.hearing.evidenceUploaded) return {title:'Prepare for the hearing',copy:'When the county DR-481 notice arrives, enter the hearing date and time, meet the evidence deadline, and complete the checklist.',tab:'hearing'};
       if(!state.result.closed) return {title:'Record the decision',copy:'When Broward sends the result, add it here to close the appeal and confirm estimated savings.',tab:'result'};
       return {title:'Appeal complete',copy:'Your result is recorded. Keep the decision and tax records with your property documents.',tab:'result'};
     }
@@ -584,6 +643,7 @@
         external:'<path d="M14 3h7v7M10 14 21 3"/><path d="M21 14v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h6"/>',
         download:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/>',
         clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+        lock:'<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
         settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1z"/>',
         refresh:'<path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M18.5 9A7 7 0 0 0 6 6.5L4 11M5.5 15A7 7 0 0 0 18 17.5l2-4.5"/>',
         alert:'<path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>'
@@ -615,14 +675,47 @@
               <button class="mode-btn ${state.mode==='homeowner'?'active':''}" data-action="set-mode" data-mode="homeowner">Homeowner</button>
               <button class="mode-btn ${state.mode==='operator'?'active':''}" data-action="set-mode" data-mode="operator">Operator</button>
             </div>
-            <button class="icon-btn" data-action="reset-demo" title="Reset prototype">${icon('refresh',17)}</button>
+            <button class="btn btn-secondary btn-sm" data-action="reset-demo" title="Wipe all demo data and return to the sign-up page">${icon('refresh',14)} Reset demo</button>
           </div>
         </div>
       </header>`;
     }
 
     function renderHomeowner(){
+      if(!state.account.created) return renderAccountSetup();
       return state.property ? renderPropertyWorkspace() : renderLookup();
+    }
+
+    function renderAccountSetup(){
+      return `<section class="lookup-wrap">
+        <div class="lookup-grid">
+          <div class="hero-panel">
+            <div style="position:relative;z-index:1">
+              <div class="eyebrow">Your appeal, made doable</div>
+              <h1>File it yourself.<br>Never feel on your own.</h1>
+              <p class="hero-copy">Abode turns your evidence package into a personalized Broward County filing plan - with the exact deadline, form answers, hearing checklist, and support boundary in one place.</p>
+            </div>
+            <div class="hero-proof">
+              <div class="proof-cell"><div class="proof-value">Sep 18</div><div class="proof-label">2026 value appeal deadline</div></div>
+              <div class="proof-cell"><div class="proof-value">$15</div><div class="proof-label">Broward filing fee (card adds 2.55% conv. fee)</div></div>
+              <div class="proof-cell"><div class="proof-value">24/7</div><div class="proof-label">Procedure-focused assistant</div></div>
+            </div>
+          </div>
+          <div class="lookup-card">
+            <div class="eyebrow">Before we start</div>
+            <h2 style="font-size:31px">Create your Abode account</h2>
+            <p class="text-muted" style="font-size:14px">Your account keeps everything connected: deadline reminders go to your email and phone, support can see your appeal, and your record persists if you come back later.</p>
+            <div class="field"><label class="label" for="acctName">Full legal name<span class="req">*</span></label><input id="acctName" autocomplete="name" placeholder="e.g., Jordan Rivera" value="${escapeHTML(state.account.owner)}"/><div class="field-help">Must match the name on the property deed - it goes on the petition.</div></div>
+            <div class="field"><label class="label" for="acctEmail">Email (this is your username)<span class="req">*</span></label><input id="acctEmail" type="email" autocomplete="email" placeholder="e.g., jordan@rivera.com" value="${escapeHTML(state.account.email)}"/><div class="field-help">The county also requires a valid email to e-file, so we confirm it now.</div></div>
+            <div class="field"><label class="label" for="acctPhone">Mobile phone<span class="req">*</span></label><input id="acctPhone" type="tel" autocomplete="tel" placeholder="e.g., (954) 555-0148" value="${escapeHTML(state.account.phone)}"/><div class="field-help">Used for deadline reminders and support callbacks only.</div></div>
+            <div class="field"><label class="label" for="acctPass">Create password<span class="req">*</span></label><input id="acctPass" type="password" autocomplete="new-password" placeholder="At least 8 characters"/><div class="field-help">${icon('lock',12)} Prototype note: your password is never saved or transmitted in this demo.</div></div>
+            <button class="btn btn-forest btn-block" data-action="create-account">Create account &amp; continue ${icon('arrow',16)}</button>
+            <div class="or-line">or</div>
+            <button class="btn btn-secondary btn-block" data-action="fill-demo-account">Fill with demo profile</button>
+            <p class="micro-disclaimer"><strong>Two logins, on purpose:</strong> this Abode account is your support and reminder channel. The county portal will separately issue you a transaction number and password when you file - Abode never asks for or stores those county credentials.</p>
+          </div>
+        </div>
+      </section>`;
     }
 
     function renderLookup(){
@@ -636,22 +729,23 @@
             </div>
             <div class="hero-proof">
               <div class="proof-cell"><div class="proof-value">Sep 18</div><div class="proof-label">2026 value appeal deadline</div></div>
-              <div class="proof-cell"><div class="proof-value">$25</div><div class="proof-label">Broward filing fee</div></div>
+              <div class="proof-cell"><div class="proof-value">$15</div><div class="proof-label">Broward filing fee (card adds 2.55% conv. fee)</div></div>
               <div class="proof-cell"><div class="proof-value">24/7</div><div class="proof-label">Procedure-focused assistant</div></div>
             </div>
           </div>
           <div class="lookup-card">
             <div class="eyebrow">Step 1 of 4</div>
             <h2 style="font-size:31px">Find the right property</h2>
-            <p class="text-muted" style="font-size:14px">We already know the account owner. Add the property address so we can map the correct county, deadline, fee, and filing path.</p>
+            <p class="text-muted" style="font-size:14px">You're signed in. Add the property address so we can map the correct county, deadline, fee, and filing path.</p>
             <div class="account-chip">
-              <div class="avatar">JR</div>
-              <div><div style="font-size:13px;font-weight:830">Jordan Rivera</div><div class="small">Paid DIY customer · Demo profile</div></div>
+              <div class="avatar">${escapeHTML(initials())}</div>
+              <div><div style="font-size:13px;font-weight:830">${escapeHTML(state.account.owner)}</div><div class="small">${escapeHTML(state.account.email)} · Paid DIY customer</div></div>
             </div>
+            ${state.appeals.length?`<div class="field"><label class="label">Your properties (${state.appeals.length})</label>${state.appeals.map(a=>`<div class="document-card" style="padding:10px 12px"><div class="doc-meta"><div class="doc-name">${escapeHTML(a.property?a.property.address:'New property')}</div><div class="doc-sub">${a.filing.filed?'Filed · '+escapeHTML(a.filing.transaction):a.result.closed?'Closed':'In progress'} · Folio ${escapeHTML(a.property?a.property.parcel:'—')}</div></div><button class="btn btn-secondary btn-sm" data-action="switch-appeal" data-id="${a.id}">Open</button></div>`).join('')}<div class="field-help">Each property is its own petition with its own $15 county fee. Add another below.</div></div>`:''}
             <div class="field">
-              <label class="label" for="addressInput">Property address</label>
+              <label class="label" for="addressInput">Property address<span class="req">*</span></label>
               <div class="input-wrap">
-                <input id="addressInput" list="propertyOptions" autocomplete="street-address" placeholder="Start typing a Broward County address" />
+                <input id="addressInput" list="propertyOptions" autocomplete="street-address" placeholder="e.g., 410 Harbor Pine Lane, Fort Lauderdale, FL 33301" />
                 <datalist id="propertyOptions">
                   ${DEMO_PROPERTIES.map(p=>`<option value="${escapeHTML(p.address)}"></option>`).join('')}
                 </datalist>
@@ -674,7 +768,12 @@
       const p=state.property, n=nextAction(), pct=progress();
       return `<div class="property-shell">
         <aside class="side-nav">
-          <div class="side-summary"><div class="address">${escapeHTML(p.address)}</div><div class="folio">Folio ${escapeHTML(p.parcel)}</div></div>
+          <div class="side-summary">
+            <div class="small" style="font-weight:800;margin-bottom:7px">Your properties (${state.appeals.length})</div>
+            ${state.appeals.map(a=>`<button class="nav-item" style="padding:8px 9px;${a.id===state.activeId?'background:var(--mint-2);color:var(--forest)':''}" data-action="switch-appeal" data-id="${a.id}"><span style="font-size:12px;font-weight:780;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHTML(shortAddr(a))}</span></button>`).join('')}
+            <button class="nav-item" style="padding:8px 9px;color:var(--forest)" data-action="add-property">+ Add another property</button>
+            <div class="folio" style="margin-top:8px">Folio ${escapeHTML(p.parcel)} · each property files as its own petition</div>
+          </div>
           <div class="nav-list">
             ${navItem('overview','1','Overview')}
             ${navItem('file','2','File')}
@@ -686,7 +785,7 @@
         <section class="main-content">
           <div class="dashboard-hero">
             <div class="dashboard-hero-row">
-              <div><div class="eyebrow">2026 Broward County value appeal</div><h2>Hi Jordan, here is your next move.</h2><p><strong style="color:white">${escapeHTML(n.title)}:</strong> ${escapeHTML(n.copy)}</p></div>
+              <div><div class="eyebrow">2026 Broward County value appeal</div><h2>Hi ${escapeHTML(firstName())}, here is your next move.</h2><p><strong style="color:white">${escapeHTML(n.title)}:</strong> ${escapeHTML(n.copy)}</p></div>
               <div class="hero-deadline"><div class="days">${daysToDeadline()}</div><div class="caption">days to file</div><div style="font-size:11px;margin-top:6px;color:rgba(255,255,255,.78)">Deadline: Sep 18, 2026</div></div>
             </div>
             <div class="progress-wrap"><div class="progress-label"><span>Appeal progress</span><span>${pct}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>
@@ -704,7 +803,7 @@
         <div class="grid grid-4">
           <div class="stat"><div class="stat-label">Estimated annual savings</div><div class="stat-value stat-accent">${money(s.savings)}</div><div class="stat-sub">If evidence-supported value is granted</div></div>
           <div class="stat"><div class="stat-label">Potential value reduction</div><div class="stat-value">${money(s.reduction)}</div><div class="stat-sub">Simplified taxable-value estimate</div></div>
-          <div class="stat"><div class="stat-label">County filing fee</div><div class="stat-value">$25</div><div class="stat-sub">Paid directly to Broward County</div></div>
+          <div class="stat"><div class="stat-label">County filing fee</div><div class="stat-value">$15</div><div class="stat-sub">Non-refundable, paid to Broward; card adds 2.55% (min $2)</div></div>
           <div class="stat"><div class="stat-label">Current stage</div><div class="stat-value" style="font-size:21px">${state.filing.filed?'Hearing prep':'Filing'}</div><div class="stat-sub">Abode guides; you submit</div></div>
         </div>
 
@@ -718,7 +817,8 @@
             <div class="info-row"><span>Folio / parcel</span><span>${escapeHTML(p.parcel)}</span></div>
             <div class="info-row"><span>Property type</span><span>${escapeHTML(p.type)}</span></div>
             <div class="info-row"><span>2026 just value</span><span>${money(p.justValue)}</span></div>
-            <button class="btn btn-secondary btn-sm mt-3" data-action="change-property">Change property</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap" class="mt-3"><button class="btn btn-secondary btn-sm" data-action="add-property">Manage / add properties</button></div>
+            <div class="field-help mt-1">Filing more than one property? Each parcel is its own petition and its own $15 fee - add it from the sidebar and Abode tracks each appeal separately.</div>
           </div>
           <div class="card savings-card">
             <div class="card-head"><div><h3>Estimated tax impact</h3><p>Clear enough to understand, cautious enough to trust.</p></div><div class="card-icon">${icon('dollar')}</div></div>
@@ -735,14 +835,14 @@
           <div class="card">
             <div class="timeline">
               <div class="timeline-item ${state.property?'done':''}"><span class="timeline-dot">1</span><div class="timeline-title">Match the property</div><div class="timeline-copy">Confirm owner, address, folio, values, and county.</div></div>
-              <div class="timeline-item ${state.filing.filed?'done':!state.filing.filed?'current':''}"><span class="timeline-dot">2</span><div class="timeline-title">File the petition yourself</div><div class="timeline-copy">Use the copy-ready worksheet, evidence package, and official Broward portal.</div></div>
+              <div class="timeline-item ${state.filing.filed?'done':!state.filing.filed?'current':''}"><span class="timeline-dot">2</span><div class="timeline-title">File the petition yourself</div><div class="timeline-copy">Use the copy-ready worksheet, evidence package, and official Broward Axia portal.</div></div>
               <div class="timeline-item ${state.hearing.evidenceUploaded?'done':state.filing.filed?'current':''}"><span class="timeline-dot">3</span><div class="timeline-title">Prepare for the hearing</div><div class="timeline-copy">Calculate the evidence deadline and rehearse a five-minute explanation.</div></div>
               <div class="timeline-item ${state.result.closed?'done':state.hearing.evidenceUploaded?'current':''}"><span class="timeline-dot">4</span><div class="timeline-title">Record the result</div><div class="timeline-copy">Save the decision and confirm estimated tax impact.</div></div>
             </div>
           </div>
           <div class="card">
             <div class="card-head"><div><h3>What Abode does - and does not do</h3><p>A clear self-service boundary protects trust.</p></div><div class="card-icon">${icon('shield')}</div></div>
-            <div class="callout callout-success"><div>${icon('check',17)}</div><div><div class="callout-title">Included in DIY</div><div class="callout-copy">Personalized deadlines, copy-ready filing answers, evidence-package handoff, hearing checklist, reminders, chatbot, and email support.</div></div></div>
+            <div class="callout callout-success"><div>${icon('check',17)}</div><div><div class="callout-title">Included in DIY</div><div class="callout-copy">Personalized deadlines, copy-ready filing answers, evidence-package PDF, hearing checklist, reminders, chatbot, and email support.</div></div></div>
             <div class="callout callout-warn"><div>${icon('user',17)}</div><div><div class="callout-title">You remain the filer</div><div class="callout-copy">You review and attest to the information, sign, submit through the county, pay the county fee, upload evidence, and attend the hearing.</div></div></div>
             <div class="callout callout-info"><div>${icon('phone',17)}</div><div><div class="callout-title">Human help is available</div><div class="callout-copy">Email is included. A paid review call or full-service upgrade is available for defined exceptions or added confidence.</div></div></div>
           </div>
@@ -753,52 +853,58 @@
 
     function eligibilityIssues(){
       const e=state.eligibility, issues=[];
-      if(e.singleParcel!=='yes') issues.push('Multiple or joint parcels require a different petition route and county review.');
-      if(e.appealType!=='value') issues.push('This MVP covers market-value appeals only. Exemption, classification, portability, and deferral appeals use different instructions.');
+      if(e.singleParcel!=='yes') issues.push('Multiple or contiguous parcels cannot be filed online - Broward requires these petitions to be filed in the VAB office (115 S. Andrews Ave., Room 120).');
+      if(e.appealType!=='value') issues.push('This MVP covers market-value appeals only. Broward requires exemption, classification, and portability (DR-486PORT) petitions to be filed in the VAB office, not online.');
       if(e.onTime!=='yes') issues.push('Late petitions require a good-cause review and should enter a human exception queue.');
       if(e.ownerMatch!=='yes') issues.push('The owner or authorized filer must be verified before the petition is signed.');
       if(e.represented==='yes') issues.push('Representation and authorization documents are outside the standard owner-filed DIY path.');
       return issues;
     }
 
+    function prereq(){
+      const issues=eligibilityIssues();
+      const list=[state.eligibility.checked&&!issues.length, state.filing.answersSaved, state.filing.evidenceDownloaded, state.filing.portalOpened];
+      return {list, allOk:list.every(Boolean)};
+    }
+
     function renderFile(){
       const p=state.property, issues=eligibilityIssues();
       return `
         <div class="section-title mt-0"><div><h2 style="font-size:31px">File your Broward petition</h2><p>Abode prepares the path. You review, sign, submit, and pay Broward County directly.</p></div><span class="pill ${state.filing.filed?'pill-green':'pill-orange'}">${state.filing.filed?'Filed':'Due Sep 18, 2026'}</span></div>
-        <div class="callout callout-info mb-0"><div>${icon('shield',18)}</div><div><div class="callout-title">The self-service boundary</div><div class="callout-copy">Abode does not log into the county portal, store your county password, sign the petition, or represent you. This guide reduces ambiguity without pretending the homeowner is receiving full-service filing.</div></div></div>
+        <div class="callout callout-info mb-0"><div>${icon('shield',18)}</div><div><div class="callout-title">The self-service boundary</div><div class="callout-copy">Abode does not log into the county portal, store your county-issued password, sign the petition, or represent you. This guide reduces ambiguity without pretending the homeowner is receiving full-service filing.</div></div></div>
 
         <div class="step-card mt-3">
-          <div class="step-head"><div class="step-title"><div class="step-number">1</div><div><h3 class="mb-0">Confirm the standard DIY path</h3><div class="small">Five questions prevent the wrong instructions.</div></div></div>${state.eligibility.checked?(issues.length?'<span class="pill pill-red">Exception flagged</span>':'<span class="pill pill-green">Standard path</span>'):''}</div>
+          <div class="step-head"><div class="step-title"><div class="step-number">1</div><div><h3 class="mb-0">Confirm the standard DIY path</h3><div class="small">Five questions prevent the wrong instructions. All required.</div></div></div>${state.eligibility.checked?(issues.length?'<span class="pill pill-red">Exception flagged</span>':'<span class="pill pill-green">Standard path</span>'):''}</div>
           <div class="step-body">
             <div class="form-grid">
-              ${selectField('One residential parcel?','eligibility.singleParcel',state.eligibility.singleParcel,[['yes','Yes - one parcel'],['no','No - multiple or joint parcels']])}
+              ${selectField('Does THIS petition cover one parcel?','eligibility.singleParcel',state.eligibility.singleParcel,[['yes','Yes - one parcel per petition'],['no','No - one petition combining multiple / contiguous parcels']])}
               ${selectField('What are you appealing?','eligibility.appealType',state.eligibility.appealType,[['value','The property market value'],['exemption','Exemption or classification denial'],['portability','Portability or tax deferral']])}
               ${selectField('Will you file by September 18, 2026?','eligibility.onTime',state.eligibility.onTime,[['yes','Yes'],['no','No / deadline may be missed']])}
               ${selectField('Does the owner name match?','eligibility.ownerMatch',state.eligibility.ownerMatch,[['yes','Yes'],['no','No / needs review']])}
               ${selectField('Is a representative filing?','eligibility.represented',state.eligibility.represented,[['no','No - owner is filing'],['yes','Yes - agent or representative']])}
             </div>
             <button class="btn btn-forest mt-2" data-action="check-eligibility">Check my filing path</button>
-            ${state.eligibility.checked ? (issues.length ? `<div class="callout callout-danger mt-2"><div>${icon('alert',18)}</div><div><div class="callout-title">Pause the standard flow</div><div class="callout-copy"><ul style="margin:5px 0 0;padding-left:17px">${issues.map(x=>`<li>${escapeHTML(x)}</li>`).join('')}</ul></div><div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:11px"><button class="btn btn-danger-soft btn-sm" data-action="open-support">Review support options</button><a class="btn btn-secondary btn-sm" href="mailto:support@abodemoney.com?subject=Broward DIY Appeal Exception">Email support</a></div></div></div>` : `<div class="callout callout-success mt-2"><div>${icon('check',18)}</div><div><div class="callout-title">This fits the Broward DIY pilot</div><div class="callout-copy">One owner-filed residential value petition, one parcel, and a timely filing date. Continue to the worksheet.</div></div></div>`) : ''}
+            ${state.eligibility.checked ? (issues.length ? `<div class="callout callout-danger mt-2"><div>${icon('alert',18)}</div><div><div class="callout-title">Pause the standard flow</div><div class="callout-copy"><ul style="margin:5px 0 0;padding-left:17px">${issues.map(x=>`<li>${escapeHTML(x)}</li>`).join('')}</ul></div><div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:11px"><button class="btn btn-danger-soft btn-sm" data-action="open-support">Review support options</button><a class="btn btn-secondary btn-sm" href="mailto:hello@abodemoney.com?subject=Broward DIY Appeal Exception">Email support</a></div></div></div>` : `<div class="callout callout-success mt-2"><div>${icon('check',18)}</div><div><div class="callout-title">This fits the Broward DIY pilot</div><div class="callout-copy">One owner-filed residential value petition, one parcel, and a timely filing date. This is exactly the petition type Broward accepts online. Own other properties? That stays in the DIY path - add each one from the sidebar and file it as its own petition (each with its own $15 fee). Only a <em>single petition combining</em> multiple or contiguous parcels must go through the VAB office.</div></div></div>`) : ''}
           </div>
         </div>
 
         <div class="step-card">
-          <div class="step-head"><div class="step-title"><div class="step-number">2</div><div><h3 class="mb-0">Review your filing worksheet</h3><div class="small">Copy these answers into the official county petition.</div></div></div>${state.filing.answersSaved?'<span class="pill pill-green">Reviewed</span>':''}</div>
+          <div class="step-head"><div class="step-title"><div class="step-number">2</div><div><h3 class="mb-0">Review your filing worksheet</h3><div class="small">Copy these answers into the official county petition. All fields required.</div></div></div>${state.filing.answersSaved?'<span class="pill pill-green">Reviewed</span>':''}</div>
           <div class="step-body">
             <div class="form-grid">
-              ${inputField('Taxpayer / owner name','account.owner',state.account.owner,'text')}
-              ${inputField('Email address','account.email',state.account.email,'email')}
+              ${inputField('Taxpayer / owner name','account.owner',state.account.owner,'text','From your account - must match the deed.')}
+              ${inputField('Email address','account.email',state.account.email,'email','The county requires a valid email to e-file.')}
               ${inputField('Phone number','account.phone',state.account.phone,'tel')}
-              ${inputField('Mailing address','account.mailing',state.account.mailing||p.address,'text')}
+              <div class="field"><label class="label">Mailing address<span class="req">*</span></label><input type="text" data-bind="account.mailing" value="${escapeHTML(state.account.mailing||'')}" placeholder="e.g., 410 Harbor Pine Lane, Fort Lauderdale, FL 33301" ${state.account.mailingSame?'readonly':''}/><label class="check-row" style="margin-bottom:0"><input type="checkbox" data-action-check="toggle-mailing-same" ${state.account.mailingSame?'checked':''}/><span>Use my property address as my mailing address</span></label><div class="field-help">Where the county should mail notices. When checked, this auto-fills and must match the property address to pass step 2.</div></div>
             </div>
-            <div class="section-title"><div><h3 style="font-size:16px">Why are you appealing?</h3><p>Select every reason supported by the Abode evidence package.</p></div></div>
+            <div class="section-title"><div><h3 style="font-size:16px">Why are you appealing?<span class="req">*</span></h3><p>Select every reason supported by the Abode evidence package. At least one required - your selections update the "Reason" row below live, so check it before confirming.</p></div></div>
             <div class="choice-grid">
               ${reasonChoice('The assessment appears higher than market value','The evidence package supports a lower January 1 market value.')}
               ${reasonChoice('Comparable sales support a lower value','Nearby qualified sales indicate the assessment may be too high.')}
               ${reasonChoice('Property facts are inaccurate','Square footage, condition, features, or other facts need correction.')}
               ${reasonChoice('Condition or damage is not reflected','Documented condition issues were not reflected in the assessment.')}
             </div>
-            <div class="section-title"><div><h3 style="font-size:16px">Copy-ready petition answers</h3><p>Aligned to the information needed for a DR-486-style value petition.</p></div><button class="btn btn-secondary btn-sm" data-action="copy-worksheet">Copy all</button></div>
+            <div class="section-title"><div><h3 style="font-size:16px">Copy-ready petition answers</h3><p>Aligned to the DR-486 value petition the portal completes electronically.</p></div><button class="btn btn-secondary btn-sm" data-action="copy-worksheet">Copy all</button></div>
             <div class="worksheet">
               ${worksheetRow('Taxpayer',state.account.owner)}
               ${worksheetRow('Property address',p.address)}
@@ -814,10 +920,11 @@
         </div>
 
         <div class="step-card">
-          <div class="step-head"><div class="step-title"><div class="step-number">3</div><div><h3 class="mb-0">Take the evidence package with you</h3><div class="small">Evidence creation is complete before this workflow begins.</div></div></div>${state.filing.evidenceDownloaded?'<span class="pill pill-green">Downloaded</span>':''}</div>
+          <div class="step-head"><div class="step-title"><div class="step-number">3</div><div><h3 class="mb-0">Download your hearing documents</h3><div class="small">Evidence creation is complete before this workflow begins.</div></div></div>${state.filing.evidenceDownloaded?'<span class="pill pill-green">Downloaded</span>':''}</div>
           <div class="step-body">
-            <div class="document-card"><div class="doc-icon">PDF</div><div class="doc-meta"><div class="doc-name">Abode_Evidence_Package_${escapeHTML(p.parcel)}.pdf</div><div class="doc-sub">Evidence summary · comparable sales · property facts · condition support</div></div><button class="btn btn-secondary btn-sm" data-action="download-evidence">${icon('download',15)} Download demo</button></div>
-            <div class="data-note">The case brief places evidence creation and valuation analysis out of scope. This prototype treats the package as a completed upstream input and focuses on getting it filed, submitted on time, and presented clearly.</div>
+            <div class="document-card"><div class="doc-icon">PDF</div><div class="doc-meta"><div class="doc-name">Abode_Evidence_Package_${escapeHTML(p.parcel)}.pdf</div><div class="doc-sub">Everything for the hearing in one file: petition summary, comparable sales, requested value, checklist, and the payment-rule warning.</div></div><button class="btn btn-secondary btn-sm" data-action="download-evidence">${icon('download',15)} Download PDF</button></div>
+            <div class="document-card"><div class="doc-icon">DR</div><div class="doc-meta"><div class="doc-name">Form DR-486 - Petition to the Value Adjustment Board</div><div class="doc-sub">Official Florida DOR form. The online portal completes this electronically; download only if you prefer to file by mail with a check.</div></div><a class="btn btn-secondary btn-sm" href="https://floridarevenue.com/property/documents/dr486.pdf" target="_blank" rel="noopener">${icon('external',14)} Official DR-486</a></div>
+            <div class="data-note">The case brief places evidence creation and valuation analysis out of scope. This prototype treats the package as a completed upstream input; the PDF above assembles it into a hearing-ready document. The DR-486 is the petition itself - the evidence package is what supports it at the hearing. They travel together but do different jobs.</div>
           </div>
         </div>
 
@@ -825,29 +932,33 @@
           <div class="step-head"><div class="step-title"><div class="step-number">4</div><div><h3 class="mb-0">Submit through Broward County</h3><div class="small">Keep Abode open in one tab and the official portal in another.</div></div></div>${state.filing.portalOpened?'<span class="pill pill-blue">Portal opened</span>':''}</div>
           <div class="step-body">
             <div class="portal-card">
-              <div class="portal-head"><div><h3 class="mb-0">Broward Value Adjustment Board portal</h3><div class="portal-url">bcvab.broward.org · Official county site</div></div><a class="btn btn-forest btn-sm" data-action="open-portal" href="https://bcvab.broward.org/" target="_blank" rel="noopener">Open official portal ${icon('external',14)}</a></div>
+              <div class="portal-head"><div><h3 class="mb-0">Broward VAB e-filing portal (Axia)</h3><div class="portal-url">bcvab.broward.org · Official county site · Run by the Broward Value Adjustment Board</div></div><a class="btn btn-forest btn-sm" data-action="open-portal" href="${PORTAL_URL}" target="_blank" rel="noopener">Click here to access the Broward VAB portal ${icon('external',14)}</a></div>
               <div class="divider"></div>
               <ol class="numbered-list">
-                <li><div><strong>Start a new 2026 petition.</strong><br><span class="text-muted">Choose real property and an assessment / value dispute.</span></div></li>
-                <li><div><strong>Enter the worksheet answers above.</strong><br><span class="text-muted">Review every field. The homeowner remains responsible for accuracy.</span></div></li>
-                <li><div><strong>Upload the Abode evidence package if the portal accepts it during filing.</strong><br><span class="text-muted">Save a copy for the later evidence exchange as well.</span></div></li>
-                <li><div><strong>Sign, attest, and pay Broward County's $25 fee.</strong><br><span class="text-muted">Abode does not sign or pay on your behalf.</span></div></li>
-                <li><div><strong>Save the confirmation and transaction number.</strong><br><span class="text-muted">Do not enter the county portal password back into Abode.</span></div></li>
+                <li><div><strong>On the county page, choose "File A New Petition."</strong><br><span class="text-muted">Select the first option - objecting to the Property Appraiser's value assessment. That is your DR-486 value petition.</span></div></li>
+                <li><div><strong>Complete the online petition using the worksheet answers above.</strong><br><span class="text-muted">Review every field. The homeowner remains responsible for accuracy.</span></div></li>
+                <li><div><strong>Pay the $15 non-refundable filing fee.</strong><br><span class="text-muted">Card payments (Visa, Mastercard, Amex) add a 2.55% convenience fee, minimum $2. Abode does not pay on your behalf.</span></div></li>
+                <li><div><strong>Save the transaction number AND password the portal gives you.</strong><br><span class="text-muted">This county-issued pair is how you log back in under "Check Petition Status" to track your petition and hearing date. Keep it in your own records - do not enter it into Abode.</span></div></li>
+                <li><div><strong>Save or screenshot your payment receipt.</strong><br><span class="text-muted">You'll attach it in the next step so your Abode record shows the filing end to end.</span></div></li>
               </ol>
             </div>
-            <div class="callout callout-warn mt-2"><div>${icon('clock',17)}</div><div><div class="callout-title">An informal conversation does not stop the clock</div><div class="callout-copy">You may discuss the assessment with the Property Appraiser, but that does not extend the VAB filing deadline.</div></div></div>
+            <div class="callout callout-info mt-2"><div>${icon('calendar',17)}</div><div><div class="callout-title">The filing window is short</div><div class="callout-copy">Broward accepted 2025 petitions online from August 18 through September 17. Expect a similar mid-August opening for the 2026 cycle - the countdown above tracks the September 18, 2026 deadline. An informal conversation with the Property Appraiser does not extend it.</div></div></div>
           </div>
         </div>
 
         <div class="step-card">
-          <div class="step-head"><div class="step-title"><div class="step-number">5</div><div><h3 class="mb-0">Close the loop in Abode</h3><div class="small">Capture proof that the homeowner completed the county step.</div></div></div>${state.filing.filed?'<span class="pill pill-green">Filed</span>':''}</div>
+          <div class="step-head"><div class="step-title"><div class="step-number">5</div><div><h3 class="mb-0">Close the loop in Abode</h3><div class="small">Capture proof that the homeowner completed the county step. All fields required.</div></div></div>${state.filing.filed?'<span class="pill pill-green">Filed</span>':''}</div>
           <div class="step-body">
-            ${state.filing.filed ? `<div class="result-panel"><div class="result-icon">${icon('check',30)}</div><h2 style="font-size:28px">Petition marked as filed</h2><p class="text-muted">Transaction ${escapeHTML(state.filing.transaction)} · Filed ${displayDate(state.filing.filedDate)}</p><button class="btn btn-forest mt-2" data-action="set-tab" data-tab="hearing">Prepare for the hearing ${icon('arrow',16)}</button></div>` : `<div class="form-grid">
-              ${inputField('County transaction number','filing.transaction',state.filing.transaction,'text','Do not enter the county password.')}
-              ${inputField('Date submitted','filing.filedDate',state.filing.filedDate||new Date().toISOString().slice(0,10),'date')}
+            ${state.filing.filed ? `<div class="result-panel"><div class="result-icon">${icon('check',30)}</div><h2 style="font-size:28px">Petition marked as filed</h2><p class="text-muted">Transaction ${escapeHTML(state.filing.transaction)} · Filed ${displayDate(state.filing.filedDate)}${state.filing.receiptName?` · Receipt: ${escapeHTML(state.filing.receiptName)}`:''}</p><button class="btn btn-forest mt-2" data-action="set-tab" data-tab="hearing">Prepare for the hearing ${icon('arrow',16)}</button></div>
+            <div class="callout callout-info"><div>${icon('clock',17)}</div><div><div class="callout-title">What happens next - and how long it takes</div><div class="callout-copy">Broward will mail you a <strong>Notice of Hearing (Form DR-481)</strong> with your hearing date and time - Florida's uniform VAB rules require it to arrive at least <strong>25 calendar days before the hearing</strong>. Broward value hearings begin in October and run weekdays 8:30 am - 4:30 pm. You can check scheduling anytime at "Check Petition Status" on the county portal using your transaction number and password. When the notice arrives, enter the date and time in the Hearing tab - Abode calculates your evidence deadline from it.</div></div></div>` : `
+            <div class="callout ${prereq().allOk?'callout-success':'callout-warn'}"><div>${icon(prereq().allOk?'check':'alert',17)}</div><div><div class="callout-title">${prereq().allOk?'Steps 1-4 complete - you can close the loop':'Finish steps 1-4 first'}</div><div class="callout-copy">${['Step 1 - filing path confirmed','Step 2 - worksheet reviewed','Step 3 - documents downloaded','Step 4 - county portal opened'].map((t,i)=>`${prereq().list[i]?'✓':'✗'} ${t}`).join(' &nbsp;·&nbsp; ')}</div></div></div>
+            <div class="form-grid mt-2">
+              ${inputField('County transaction number','filing.transaction',state.filing.transaction,'text','Enter it exactly as it appears on your portal confirmation - the format resembles 2026-###### (year + at least six digits). Never enter the county-issued password here.','e.g., 2026-014823')}
+              ${inputField('Date submitted','filing.filedDate',state.filing.filedDate,'date','The date shown on your portal confirmation.')}
             </div>
-            <label class="check-row"><input type="checkbox" data-bind="filing.feePaid" ${state.filing.feePaid?'checked':''}/><span>I paid the county filing fee and saved the receipt.</span></label>
-            <label class="check-row"><input type="checkbox" data-bind="filing.attested" ${state.filing.attested?'checked':''}/><span>I reviewed, signed, and submitted the petition myself. I understand Abode did not file or represent me.</span></label>
+            ${state.filing.receiptAttached?`<div class="field"><label class="label">Payment receipt<span class="req">*</span></label><div class="document-card"><div class="doc-icon">${icon('check',18)}</div><div class="doc-meta"><div class="doc-name">${escapeHTML(state.filing.receiptName)}</div><div class="doc-sub">Attached · file name recorded, file itself not uploaded or stored in this demo</div></div><button class="btn btn-secondary btn-sm" data-action="replace-receipt">Replace</button></div></div>`:`<div class="field"><label class="label">Attach your payment receipt<span class="req">*</span></label><input type="file" id="receiptInput" accept=".pdf,.jpg,.jpeg,.png"/><div class="field-help">Demo only - the file name is recorded, the file itself is not uploaded or stored.</div></div>`}
+            <label class="check-row"><input type="checkbox" data-bind="filing.feePaid" ${state.filing.feePaid?'checked':''}/><span>I paid the county's $15 filing fee (plus any card convenience fee) and saved the receipt.<span class="req">*</span></span></label>
+            <label class="check-row"><input type="checkbox" data-bind="filing.attested" ${state.filing.attested?'checked':''}/><span>I reviewed, signed, and submitted the petition myself. I understand Abode did not file or represent me.<span class="req">*</span></span></label>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn btn-secondary" data-action="fill-demo-confirmation">Use demo confirmation</button><button class="btn btn-forest" data-action="mark-filed">Mark petition as filed</button></div>`}
           </div>
         </div>
@@ -857,43 +968,79 @@
     function renderHearing(){
       const due=subtractDays(state.hearing.date,15);
       const complete = state.hearing.noticeRead && state.hearing.evidenceUploaded && state.hearing.scriptReviewed;
+      const timeLabel = state.hearing.time ? formatTime(state.hearing.time) : 'Add time';
       return `
         <div class="section-title mt-0"><div><h2 style="font-size:31px">Prepare for the hearing</h2><p>Turn the county notice into deadlines, tasks, and a short homeowner script.</p></div><span class="pill ${complete?'pill-green':'pill-orange'}">${complete?'Ready':'Preparation'}</span></div>
         ${!state.filing.filed?`<div class="callout callout-warn"><div>${icon('alert',18)}</div><div><div class="callout-title">Demo mode</div><div class="callout-copy">In production, this section unlocks after the homeowner records a filing confirmation. It remains visible here so the interview team can inspect the complete journey.</div></div></div>`:''}
-        <div class="grid grid-3 mt-3">
-          <div class="stat"><div class="stat-label">Hearing date</div><div class="stat-value" style="font-size:20px">${shortDate(state.hearing.date)}</div><div class="stat-sub">Replace demo date with county notice</div></div>
+        <div class="callout callout-info ${!state.filing.filed?'mt-2':''}"><div>${icon('mail',17)}</div><div><div class="callout-title">Action needed from you: enter the date and time from your county notice</div><div class="callout-copy">Broward mails a <strong>Notice of Hearing (Form DR-481)</strong> at least <strong>25 calendar days before your hearing</strong> - value hearings begin in October, weekdays 8:30 am - 4:30 pm. Abode cannot see the county's schedule for you (we never hold your county portal login), so when the notice arrives, enter the <strong>date and time</strong> below and upload the notice for your records. Everything else - the evidence deadline, calendar invites, and your script - is calculated from it. No notice yet? Check "Petition Status" on the portal with your transaction number and password.</div></div></div>
+        <div class="grid grid-4 mt-3">
+          <div class="stat"><div class="stat-label">Hearing date</div><div class="stat-value" style="font-size:20px">${state.hearing.date?shortDate(state.hearing.date):'Awaiting notice'}</div><div class="stat-sub">From your DR-481 notice</div></div>
+          <div class="stat"><div class="stat-label">Hearing time</div><div class="stat-value" style="font-size:20px">${escapeHTML(timeLabel)}</div><div class="stat-sub">From your DR-481 notice</div></div>
           <div class="stat"><div class="stat-label">Evidence due</div><div class="stat-value stat-accent" style="font-size:20px">${shortDate(due)}</div><div class="stat-sub">15 days before the hearing</div></div>
-          <div class="stat"><div class="stat-label">Format</div><div class="stat-value" style="font-size:20px;text-transform:capitalize">${escapeHTML(state.hearing.format)}</div><div class="stat-sub">Confirm against the hearing notice</div></div>
+          <div class="stat"><div class="stat-label">Format</div><div class="stat-value" style="font-size:20px;text-transform:capitalize">${escapeHTML(state.hearing.format)}</div><div class="stat-sub">Confirm against the notice</div></div>
         </div>
         <div class="grid grid-2 mt-3">
           <div class="card">
-            <div class="card-head"><div><h3>Add the hearing notice</h3><p>The date drives the evidence countdown.</p></div><div class="card-icon">${icon('calendar')}</div></div>
+            <div class="card-head"><div><h3>Add the hearing notice</h3><p>The date and time drive the evidence countdown and calendar invite.</p></div><div class="card-icon">${icon('calendar')}</div></div>
             <div class="form-grid">
-              ${inputField('Hearing date','hearing.date',state.hearing.date,'date','Demo date shown until the county notice arrives.')}
-              ${selectField('Hearing format','hearing.format',state.hearing.format,[['remote','Remote / video'],['phone','Telephone'],['in-person','In person']])}
+              ${inputField('Hearing date','hearing.date',state.hearing.date,'date','Enter the date printed on your DR-481 notice.')}
+              ${inputField('Hearing time','hearing.time',state.hearing.time,'time','Enter the time printed on your DR-481 notice - it goes on your calendar invite.')}
             </div>
-            <div class="callout callout-info mt-2"><div>${icon('clock',17)}</div><div><div class="callout-title">Evidence exchange deadline: ${shortDate(due)}</div><div class="callout-copy">Florida law requires both the petitioner and property appraiser to provide their evidence at least 15 days before the hearing.</div></div></div>
-            <button class="btn btn-secondary mt-2" data-action="download-calendar">${icon('calendar',16)} Add deadlines to calendar</button>
+            <div class="form-grid">
+              ${selectField('Hearing format','hearing.format',state.hearing.format,[['remote','Remote / video'],['phone','Telephone'],['in-person','In person']])}
+              ${state.hearing.noticeFile?`<div class="field"><label class="label">Hearing notice (DR-481)<span class="req">*</span></label><div class="document-card" style="padding:10px 12px"><div class="doc-meta"><div class="doc-name">${escapeHTML(state.hearing.noticeFile)}</div><div class="doc-sub">Attached for your records</div></div><button class="btn btn-secondary btn-sm" data-action="replace-notice">Replace</button></div></div>`:`<div class="field"><label class="label">Upload the hearing notice<span class="req">*</span></label><input type="file" id="noticeInput" accept=".pdf,.jpg,.jpeg,.png"/><div class="field-help">Demo records the file name only. In production, Abode would read the DR-481 and pre-fill the date, time, and format for you to confirm.</div></div>`}
+            </div>
+            <div class="callout callout-info mt-2"><div>${icon('clock',17)}</div><div><div class="callout-title">Evidence exchange deadline: ${shortDate(due)}</div><div class="callout-copy">Florida law requires the petitioner to provide evidence at least 15 days before the hearing; the property appraiser's evidence is available at least 7 days before. Broward value hearings are heard by appraiser special magistrates.</div></div></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn btn-secondary" data-action="fill-demo-notice">Use demo notice</button><button class="btn btn-secondary" data-action="download-calendar">${icon('calendar',16)} Add deadlines to calendar</button></div>
           </div>
           <div class="card">
             <div class="card-head"><div><h3>Your readiness checklist</h3><p>These are completion controls, not reading material.</p></div><div class="card-icon">${icon('check')}</div></div>
             <label class="check-row"><input type="checkbox" data-bind="hearing.noticeRead" ${state.hearing.noticeRead?'checked':''}/><span>I reviewed the county hearing notice, date, time, format, and access instructions.</span></label>
             <label class="check-row"><input type="checkbox" data-bind="hearing.evidenceUploaded" ${state.hearing.evidenceUploaded?'checked':''}/><span>I submitted the evidence by ${shortDate(due)} and saved proof of submission.</span></label>
-            <label class="check-row"><input type="checkbox" data-bind="hearing.scriptReviewed" ${state.hearing.scriptReviewed?'checked':''}/><span>I reviewed the five-minute explanation and know which exhibits support each point.</span></label>
+            <label class="check-row"><input type="checkbox" data-bind="hearing.scriptReviewed" ${state.hearing.scriptReviewed?'checked':''}/><span>I reviewed my personalized script and know which exhibits support each point.</span></label>
             <label class="check-row"><input type="checkbox" data-bind="hearing.calendarAdded" ${state.hearing.calendarAdded?'checked':''}/><span>I added the hearing and evidence deadlines to my calendar.</span></label>
-            ${complete?`<div class="callout callout-success mt-2"><div>${icon('check',17)}</div><div><div class="callout-title">Ready for the hearing</div><div class="callout-copy">The core preparation controls are complete.</div></div></div>`:''}
+            ${complete?`<div class="callout callout-success mt-2"><div>${icon('check',17)}</div><div><div class="callout-title">Ready for the hearing</div><div class="callout-copy">The core preparation controls are complete. After the hearing, the county mails the decision - record it in the Result tab to close this appeal.</div></div><button class="btn btn-forest btn-sm mt-2" data-action="set-tab" data-tab="result">Continue to Result ${icon('arrow',14)}</button></div>`:''}
           </div>
         </div>
         <div class="section-title"><div><h3>Your five-minute hearing outline</h3><p>Simple language, tied directly to the evidence package.</p></div><button class="btn btn-soft btn-sm" data-action="ask-hearing-chat">Practice with chatbot</button></div>
         <div class="card">
-          <details open><summary>1. State the requested correction</summary><div class="details-body">“I am asking the Board to reduce the January 1 market value from ${money(state.property.justValue)} to ${money(state.property.supportedValue)} based on the evidence submitted.”</div></details>
+          <details open><summary>1. State the requested correction</summary><div class="details-body">"I am asking the Board to reduce the January 1 market value from ${money(state.property.justValue)} to ${money(state.property.supportedValue)} based on the evidence submitted."</div></details>
           <details><summary>2. Explain the strongest evidence first</summary><div class="details-body">Lead with the two or three pieces of evidence that most clearly support the lower value. Use exhibit names and page numbers rather than retelling the entire package.</div></details>
           <details><summary>3. Address property differences</summary><div class="details-body">Explain material differences in size, condition, location, renovations, or sale circumstances. Focus on facts that affect January 1 market value.</div></details>
-          <details><summary>4. Answer questions directly</summary><div class="details-body">Pause, answer only the question asked, and return to the exhibit. Do not argue about the tax rate; the hearing is about the assessment.</div></details>
+          <details><summary>4. Answer questions directly</summary><div class="details-body">Pause, answer only the question asked, and return to the exhibit. Do not argue about the tax rate; the hearing is about the assessment. The hearing is quasi-judicial - a real proceeding with a special magistrate - but it is short and you do not need a lawyer for a standard value petition.</div></details>
           <details><summary>5. Close with the requested value</summary><div class="details-body">Restate the evidence-supported value and thank the magistrate. Keep the request specific.</div></details>
         </div>
-        <div class="callout callout-warn mt-3"><div>${icon('alert',18)}</div><div><div class="callout-title">Do not forget the tax-payment rule</div><div class="callout-copy">A pending VAB petition does not automatically pause the tax bill. Check the county tax bill and required partial-payment rules before delinquency.</div></div></div>
+        <div class="card mt-2" style="background:linear-gradient(135deg,#eef8f3,#fdfbf5)">
+          <div class="card-head"><div><h3>Your personalized script</h3><p>Built from your worksheet: your property, your reasons, your numbers, your hearing format. It updates as you change them.</p></div><button class="btn btn-secondary btn-sm" data-action="copy-script">Copy my script</button></div>
+          <div class="details-body" style="padding:0;white-space:pre-line;color:var(--ink-2);font-size:12.5px;line-height:1.65">${escapeHTML(personalScript())}</div>
+        </div>
+        <div class="callout callout-danger mt-3"><div>${icon('alert',18)}</div><div><div class="callout-title">Do not forget the tax-payment rule (s. 194.014, F.S.)</div><div class="callout-copy">A pending petition does not pause your tax bill. Before the delinquency date (normally April 1 after the assessment year), you must pay <strong>all non-ad valorem assessments plus at least 75% of the ad valorem taxes</strong>, less applicable discounts. If the required partial payment is not made in time, <strong>the VAB will deny your petition</strong> - even if a reduction was already recommended. Abode schedules a reminder well before this date.</div></div></div>
       `;
+    }
+
+    function formatTime(t){
+      if(!t) return '';
+      const [h,m]=t.split(':').map(Number);
+      const ampm=h>=12?'PM':'AM'; const hh=((h+11)%12)+1;
+      return `${hh}:${String(m).padStart(2,'0')} ${ampm}`;
+    }
+
+    function personalScript(){
+      const p=state.property; if(!p) return '';
+      const s=calcSavings();
+      const reasonLines={
+        'The assessment appears higher than market value':'The county\'s just value of '+money(p.justValue)+' exceeds what the market evidence supports for this property as of January 1.',
+        'Comparable sales support a lower value':'Exhibits A through C are closed sales near '+p.address.split(',')[0]+'; adjusted, they indicate a market value of about '+money(p.supportedValue)+'.',
+        'Property facts are inaccurate':'The property record contains factual errors (size, features, or condition data) that inflate the assessment; the corrected facts are documented in the evidence package.',
+        'Condition or damage is not reflected':'Documented condition issues, included in the evidence package, were not reflected in the assessment and reduce the market value.'
+      };
+      const formatTip={
+        'remote':'Format tip: you chose a remote hearing - test your video link and audio 10 minutes early, and have the evidence package open on screen.',
+        'phone':'Format tip: you chose a telephone hearing - call from a quiet room and keep the printed evidence package in front of you with exhibits tabbed.',
+        'in-person':'Format tip: you chose in person - arrive early at the hearing location on your notice, bring two printed copies of the evidence package, and have your transaction number handy.'
+      };
+      const when=state.hearing.date?('My hearing is '+shortDate(state.hearing.date)+(state.hearing.time?' at '+formatTime(state.hearing.time):'')+'. '):'';
+      return 'OPENING\n"Good morning. I am '+state.account.owner+', the owner of '+p.address+', folio '+p.parcel+'. I am asking the Board to reduce the January 1 market value from '+money(p.justValue)+' to '+money(p.supportedValue)+' based on the evidence submitted."\n\nYOUR REASONS (from your worksheet)\n'+(state.appealReasons.length?state.appealReasons.map((r,i)=>(i+1)+'. '+(reasonLines[r]||r)).join('\n'):'Select at least one appeal reason in the File tab to build this section.')+'\n\nCLOSING\n"For these reasons, the evidence supports a market value of '+money(p.supportedValue)+', a reduction of '+money(Number(p.justValue)-Number(p.supportedValue))+'. I respectfully request the Board adopt that value. Thank you."\n\n'+when+(formatTip[state.hearing.format]||'')+'\nEstimated annual tax impact if granted: about '+money(s.savings)+' (estimate only).';
     }
 
     function renderResult(){
@@ -902,17 +1049,18 @@
       const s=calcSavings(p,final);
       return `
         <div class="section-title mt-0"><div><h2 style="font-size:31px">Receive and record the result</h2><p>Close the operational loop and give the homeowner a clear outcome.</p></div><span class="pill ${state.result.closed?'pill-green':'pill-gray'}">${state.result.closed?'Closed':'Awaiting decision'}</span></div>
-        ${state.result.closed ? `<div class="card result-panel"><div class="result-icon">${icon('check',32)}</div><h2>${resultLabel(state.result.outcome)}</h2><p class="text-muted">Decision recorded ${displayDate(state.result.decisionDate)} · Final value ${money(state.result.finalValue)}</p><div class="grid grid-3 mt-3" style="text-align:left"><div class="stat"><div class="stat-label">Original value</div><div class="stat-value">${money(p.justValue)}</div></div><div class="stat"><div class="stat-label">Final value</div><div class="stat-value">${money(state.result.finalValue)}</div></div><div class="stat"><div class="stat-label">Estimated annual impact</div><div class="stat-value stat-accent">${money(s.savings)}</div></div></div><p class="small mt-2">Estimated tax impact remains subject to certified rates, exemptions, assessed-value caps, and the final tax bill.</p></div>` : `
+        ${state.result.closed ? `<div class="card result-panel"><div class="result-icon">${icon('check',32)}</div><h2>${resultLabel(state.result.outcome)}</h2><p class="text-muted">Decision recorded ${displayDate(state.result.decisionDate)} · Final value ${money(state.result.finalValue)}</p><div class="grid grid-3 mt-3" style="text-align:left"><div class="stat"><div class="stat-label">Original value</div><div class="stat-value">${money(p.justValue)}</div></div><div class="stat"><div class="stat-label">Final value</div><div class="stat-value">${money(state.result.finalValue)}</div></div><div class="stat"><div class="stat-label">Estimated annual impact</div><div class="stat-value stat-accent">${money(s.savings)}</div></div></div><p class="small mt-2">Estimated tax impact remains subject to certified rates, exemptions, assessed-value caps, and the final tax bill.</p><button class="btn btn-secondary mt-2" data-action="export-record">${icon('download',15)} Export appeal record (CSV)</button></div>
+        <div class="callout callout-info mt-3"><div>${icon('file',17)}</div><div><div class="callout-title">Disagree with the recommendation?</div><div class="callout-copy">Broward allows a written request for legal review of the special magistrate's worksheet by the VAB attorney - but only within <strong>15 calendar days of the worksheet mailing date</strong> (email vab@broward.org). This is a defined exception: Abode flags the window and routes you to human support rather than drafting legal arguments.</div></div></div>` : `
         <div class="grid grid-2 mt-3">
           <div class="card">
-            <div class="card-head"><div><h3>Add the VAB decision</h3><p>Use the notice sent by Broward County.</p></div><div class="card-icon">${icon('file')}</div></div>
-            <div class="field"><label class="label">Outcome</label><select data-bind="result.outcome"><option value="">Select outcome</option><option value="granted" ${state.result.outcome==='granted'?'selected':''}>Reduction granted</option><option value="partial" ${state.result.outcome==='partial'?'selected':''}>Partial reduction</option><option value="no-change" ${state.result.outcome==='no-change'?'selected':''}>No change</option><option value="withdrawn" ${state.result.outcome==='withdrawn'?'selected':''}>Withdrawn or resolved before hearing</option><option value="other" ${state.result.outcome==='other'?'selected':''}>Other</option></select></div>
+            <div class="card-head"><div><h3>Add the VAB decision</h3><p>Use the notice sent by Broward County. All fields required.</p></div><div class="card-icon">${icon('file')}</div></div>
+            <div class="field"><label class="label">Outcome<span class="req">*</span></label><select data-bind="result.outcome"><option value="">Select outcome</option><option value="granted" ${state.result.outcome==='granted'?'selected':''}>Reduction granted</option><option value="partial" ${state.result.outcome==='partial'?'selected':''}>Partial reduction</option><option value="no-change" ${state.result.outcome==='no-change'?'selected':''}>No change</option><option value="withdrawn" ${state.result.outcome==='withdrawn'?'selected':''}>Withdrawn or resolved before hearing</option><option value="other" ${state.result.outcome==='other'?'selected':''}>Other</option></select></div>
             <div class="form-grid">
-              ${inputField('Decision date','result.decisionDate',state.result.decisionDate,'date')}
-              ${inputField('Final market value','result.finalValue',state.result.finalValue||p.supportedValue,'number')}
+              ${inputField('Decision date','result.decisionDate',state.result.decisionDate,'date','From the county decision notice.')}
+              ${inputField('Final market value','result.finalValue',state.result.finalValue,'number','The value on the decision.',`e.g., ${num(p.supportedValue)}`)}
             </div>
-            <div class="field"><label class="label">Notes</label><textarea data-bind="result.notes" placeholder="Optional summary of the decision">${escapeHTML(state.result.notes)}</textarea></div>
-            <div class="field"><label class="label">Decision file</label><input type="file" accept=".pdf,.jpg,.jpeg,.png"/><div class="field-help">Demo only - the file is not uploaded or stored.</div></div>
+            <div class="field"><label class="label">Notes <span class="small">(optional)</span></label><textarea data-bind="result.notes" placeholder="e.g., magistrate accepted comps 1 and 3, discounted comp 2">${escapeHTML(state.result.notes)}</textarea></div>
+            <div class="field"><label class="label">Decision file<span class="req">*</span></label><input type="file" accept=".pdf,.jpg,.jpeg,.png"/><div class="field-help">Demo only - the file is not uploaded or stored.</div></div>
             <button class="btn btn-forest" data-action="record-result">Record and close appeal</button>
           </div>
           <div class="card savings-card">
@@ -922,30 +1070,31 @@
             <div class="info-row"><span>Value reduction</span><span>${money(Math.max(0,p.assessedValue-final))}</span></div>
             <div class="divider"></div>
             <div class="small">Estimated annual tax impact</div><div class="savings-number">${money(s.savings)}</div>
-            <div class="data-note">A decision capture rate matters operationally: without it, Abode cannot measure customer outcomes, identify county issues, or learn which users need follow-up.</div>
+            <div class="data-note"><strong>Where these answers live:</strong> in this static prototype every response persists to a structured record in the browser (localStorage) and can be exported as CSV. In production, each event writes to an <em>appeals</em> table via API - keyed by account and folio - so operations can measure completion, catch stuck users, and report outcomes.</div>
+            <button class="btn btn-secondary btn-sm mt-2" data-action="export-record">${icon('download',14)} Export appeal record (CSV)</button>
           </div>
         </div>`}
       `;
     }
 
     function resultLabel(v){return ({granted:'Reduction granted',partial:'Partial reduction recorded','no-change':'No change to the assessment',withdrawn:'Petition withdrawn or resolved',other:'Appeal result recorded'})[v]||'Appeal result recorded'}
-    function inputField(label,path,value,type='text',help=''){
-      return `<div class="field"><label class="label">${escapeHTML(label)}</label><input type="${type}" data-bind="${path}" value="${escapeHTML(value||'')}"/>${help?`<div class="field-help">${escapeHTML(help)}</div>`:''}</div>`;
+    function inputField(label,path,value,type='text',help='',placeholder=''){
+      return `<div class="field"><label class="label">${escapeHTML(label)}<span class="req">*</span></label><input type="${type}" data-bind="${path}" value="${escapeHTML(value||'')}" ${placeholder?`placeholder="${escapeHTML(placeholder)}"`:''}/>${help?`<div class="field-help">${escapeHTML(help)}</div>`:''}</div>`;
     }
     function selectField(label,path,value,options){
-      return `<div class="field"><label class="label">${escapeHTML(label)}</label><select data-bind="${path}">${options.map(o=>`<option value="${escapeHTML(o[0])}" ${value===o[0]?'selected':''}>${escapeHTML(o[1])}</option>`).join('')}</select></div>`;
+      return `<div class="field"><label class="label">${escapeHTML(label)}<span class="req">*</span></label><select data-bind="${path}">${options.map(o=>`<option value="${escapeHTML(o[0])}" ${value===o[0]?'selected':''}>${escapeHTML(o[1])}</option>`).join('')}</select></div>`;
     }
     function reasonChoice(value,desc){
       const checked=state.appealReasons.includes(value);
       return `<label class="choice"><input type="checkbox" data-reason="${escapeHTML(value)}" ${checked?'checked':''}/><span><strong>${escapeHTML(value)}</strong><span class="text-muted">${escapeHTML(desc)}</span></span></label>`;
     }
-    function worksheetRow(k,v){return `<div class="worksheet-row"><div class="k">${escapeHTML(k)}</div><div class="v">${escapeHTML(v)}</div><button class="copy-btn" data-action="copy-text" data-copy="${escapeHTML(v)}">Copy</button></div>`}
+    function worksheetRow(k,v){return `<div class="worksheet-row"><div class="k">${escapeHTML(k)}</div><div class="v">${escapeHTML(v||'—')}</div><button class="copy-btn" data-action="copy-text" data-copy="${escapeHTML(v||'')}">Copy</button></div>`}
 
     function renderOperator(){
       return `
         <section class="operator-hero">
           <div class="operator-hero-inner">
-            <div><div class="eyebrow">Launch recommendation</div><h1 style="font-size:48px">Start in Broward County.</h1><p>It gives Abode the best first test of a complete DIY journey: meaningful petition volume, a digitally mature filing path, enough hearings to validate the preparation product, high homeowner tax sensitivity, and public operational metrics.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px"><span class="pill pill-green">97% electronic in FY2024</span><span class="pill pill-orange">6,926 folios confirmed</span><span class="pill pill-blue">80% went to hearing</span></div></div>
+            <div><div class="eyebrow">Launch recommendation</div><h1 style="font-size:48px">Start in Broward County.</h1><p>It gives Abode the best first test of a complete DIY journey: meaningful petition volume, a digitally mature filing path, enough hearings to validate the preparation product, high homeowner tax sensitivity, and public operational metrics. Prove the baseline in a measurable county, then scale the playbook into more complex markets.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px"><span class="pill pill-green">97% electronic in FY2024</span><span class="pill pill-orange">6,926 folios confirmed</span><span class="pill pill-blue">80% went to hearing</span><span class="pill pill-green">$15 fee (lowered from $25)</span></div></div>
             <div class="score-ring"><div class="score-inner"><div class="score-value">93</div><div class="score-label">internal launch score</div></div></div>
           </div>
         </section>
@@ -960,7 +1109,7 @@
         <section id="q1" class="operator-section">
           <div class="q-label"><span class="q-num">1</span> Why DIY?</div>
           <h2>Sell certainty and control - not a thinner version of full service.</h2>
-          <p class="answer-lede">The paid homeowner already has a strong evidence package. The remaining problem is operational: knowing exactly what to do, when to do it, where to do it, and when a situation is no longer safe for self-service.</p>
+          <p class="answer-lede">The paid homeowner already has a strong evidence package. The remaining problem is operational: knowing exactly what to do, when to do it, where to do it, and when a situation is no longer safe for self-service. DIY also unlocks the segment full-service contingency firms structurally ignore - homes where the likely savings are too modest to justify a 25-35% contingency cut, but where the homeowner still overpays.</p>
           <div class="grid grid-3">
             <div class="card value-card"><div class="value-icon">${icon('user')}</div><h3>Homeowner value</h3><p>A lower-cost path with a personalized checklist, copy-ready answers, deadline protection, 24/7 procedural help, and the confidence that someone has translated the county process.</p></div>
             <div class="card value-card"><div class="value-icon">${icon('chart')}</div><h3>Abode value</h3><p>A scalable service tier with lower variable labor, a broader addressable segment, structured completion data, and a clear upgrade path when the DIY boundary is reached.</p></div>
@@ -972,15 +1121,15 @@
         <section id="q2" class="operator-section">
           <div class="q-label"><span class="q-num">2</span> End-to-end DIY product</div>
           <h2>Broward wins the first-launch decision.</h2>
-          <p class="answer-lede">The choice is based on the quality of the operating test, not just county size. A successful pilot needs users, a digital filing path, enough hearings to test the whole product, measurable county operations, and homeowner economics that make completion worthwhile.</p>
-          <div class="launch-banner"><div><h3 class="mb-0">Decision: one owner-filed residential value petition in Broward County</h3><p>Timely 2026 filing · one parcel · homeowner represents themselves · evidence package already created.</p></div><span class="pill pill-green">Recommended MVP scope</span></div>
+          <p class="answer-lede">The choice is based on the quality of the operating test, not just county size. A successful pilot needs users, a digital filing path, enough hearings to test the whole product, measurable county operations, and homeowner economics that make completion worthwhile. Broward is the only candidate with published operational data to baseline against - and its 2025 fee cut to $15 removed Miami-Dade's cost advantage.</p>
+          <div class="launch-banner"><div><h3 class="mb-0">Decision: one owner-filed residential value petition in Broward County</h3><p>Timely 2026 filing · one parcel · homeowner represents themselves · evidence package already created. This is exactly the petition type Broward accepts online - everything else must be filed in the VAB office, which is why the eligibility gate exists.</p></div><span class="pill pill-green">Recommended MVP scope</span></div>
           <div class="card">
             <div class="card-head"><div><h3>County launch scorecard</h3><p>Internal product judgment. Weighting: demand 30%, digital path 25%, homeowner economics 20%, measurability 15%, launch complexity 10%.</p></div><div class="card-icon">${icon('chart')}</div></div>
             <table class="county-table">
               <thead><tr><th>County</th><th>Internal score</th><th>What the diligence says</th><th>Launch call</th></tr></thead>
               <tbody>
-                <tr class="winner"><td><strong>Broward</strong><br><span class="small">Recommended</span></td><td><strong>93 / 100</strong><div class="scorebar"><span style="width:93%"></span></div></td><td>97% electronic petition intake in FY2024; 6,926 folios confirmed; 80% proceeded to hearing; 2026 value deadline September 18; $25 filing fee; average municipality millage 19.8394.</td><td><span class="pill pill-green">Launch first</span><br><span class="small">Best complete-workflow test</span></td></tr>
-                <tr><td><strong>Miami-Dade</strong></td><td><strong>84 / 100</strong><div class="scorebar"><span style="width:84%"></span></div></td><td>Mature 2026 electronic portal; $15 per folio; transaction-number status and evidence upload. Contiguous undeveloped parcels and condominium group filings create a broader exception surface.</td><td><span class="pill pill-blue">Phase 2</span><br><span class="small">Large upside after playbook proves out</span></td></tr>
+                <tr class="winner"><td><strong>Broward</strong><br><span class="small">Recommended</span></td><td><strong>93 / 100</strong><div class="scorebar"><span style="width:93%"></span></div></td><td>97% electronic petition intake in FY2024; 6,926 folios confirmed; 80% proceeded to hearing; 2026 value deadline September 18; $15 filing fee (lowered from $25 for the 2025 cycle; card payments add 2.55%, min $2); average municipality millage 19.8394; the only candidate with published VAB operational metrics to baseline the pilot against.</td><td><span class="pill pill-green">Launch first</span><br><span class="small">Best measurable complete-workflow test</span></td></tr>
+                <tr><td><strong>Miami-Dade</strong></td><td><strong>84 / 100</strong><div class="scorebar"><span style="width:84%"></span></div></td><td>Largest market at 1M+ parcels with a mature 2026 e-filing portal, $15 per folio, and a bilingual homeowner base worth localizing for. But it is also the most complex market: contiguous undeveloped parcels, condominium group filings, and higher heterogeneity widen the exception surface. Better attacked with a proven playbook than as a first pilot.</td><td><span class="pill pill-blue">Phase 2</span><br><span class="small">Large upside after the baseline proves out</span></td></tr>
                 <tr><td><strong>Orange</strong></td><td><strong>70 / 100</strong><div class="scorebar"><span style="width:70%"></span></div></td><td>Same September 18 value deadline, but the 2026 online portal was still under construction as of July 25, 2026; alternative filing methods and a $50 applicable filing fee add launch friction.</td><td><span class="pill pill-orange">Wait</span><br><span class="small">Avoid changing portal risk in pilot</span></td></tr>
               </tbody>
             </table>
@@ -997,33 +1146,33 @@
 
           <div class="section-title"><div><h3>The operating boundary</h3><p>Every task has one accountable owner.</p></div></div>
           <div class="boundary-table">
-            <div class="boundary-col"><h4><span class="pill pill-green">Abode product</span></h4><ul><li>Address and county match</li><li>Deadline, fee, and route</li><li>Copy-ready filing worksheet</li><li>Evidence-package handoff</li><li>Hearing countdown and script</li><li>Chatbot and email guidance</li><li>Result capture and reminders</li></ul></div>
-            <div class="boundary-col"><h4><span class="pill pill-blue">Homeowner</span></h4><ul><li>Review property and answers</li><li>Attest and sign</li><li>Submit on county portal</li><li>Pay the county fee</li><li>Save transaction details</li><li>Upload evidence</li><li>Attend hearing and record result</li></ul></div>
-            <div class="boundary-col"><h4><span class="pill pill-orange">Human exception</span></h4><ul><li>Late / good-cause filing</li><li>Multiple or joint parcels</li><li>Exemption or classification appeal</li><li>Owner / authorization mismatch</li><li>Portal or accessibility failure</li><li>Legal conclusion requested</li><li>Paid review or full-service upgrade</li></ul></div>
+            <div class="boundary-col"><h4><span class="pill pill-green">Abode product</span></h4><ul><li>Account, reminders, support channel</li><li>Address and county match</li><li>Deadline, fee, and route</li><li>Copy-ready filing worksheet</li><li>Hearing-ready evidence PDF</li><li>Hearing countdown and script</li><li>Chatbot and email guidance</li><li>Result capture and record export</li></ul></div>
+            <div class="boundary-col"><h4><span class="pill pill-blue">Homeowner</span></h4><ul><li>Review property and answers</li><li>Attest and sign</li><li>Submit on county portal</li><li>Pay the county fee</li><li>Save county transaction # + password</li><li>Attach receipt, upload evidence</li><li>Attend hearing and record result</li></ul></div>
+            <div class="boundary-col"><h4><span class="pill pill-orange">Human exception</span></h4><ul><li>Late / good-cause filing</li><li>Multiple or contiguous parcels (VAB office only)</li><li>Exemption / classification / portability (VAB office only)</li><li>Owner / authorization mismatch</li><li>Portal or accessibility failure</li><li>Legal review request window (15 days)</li><li>Paid review or full-service upgrade</li></ul></div>
           </div>
 
           <div class="section-title"><div><h3>Why the chatbot belongs in the product</h3><p>It replaces procedural anxiety, not professional judgment.</p></div></div>
           <div class="grid grid-2">
             <div class="card"><h3>Service without hidden labor</h3><p class="text-muted" style="font-size:13px">Homeowners get stuck on small, repeatable questions - “Which value am I appealing?”, “Where is my folio number?”, “What happens at the hearing?” A source-grounded assistant answers these immediately, keeps the user in the workflow, and reduces email volume.</p><div class="callout callout-success mt-2"><div>${icon('bot',18)}</div><div><div class="callout-title">Production behavior</div><div class="callout-copy">Answers only from verified state/county content, displays the source and last-verified date, and logs unanswered questions for content improvement.</div></div></div></div>
-            <div class="card"><h3>Hard guardrails</h3><div class="info-row"><span>May explain</span><span>Procedure, fields, deadlines, status</span></div><div class="info-row"><span>May not do</span><span>Sign, submit, represent, or store credentials</span></div><div class="info-row"><span>Escalates</span><span>Late filing, multiple parcels, mismatch, legal request</span></div><div class="info-row"><span>Human options</span><span>Email, paid review call, full-service upgrade</span></div><button class="btn btn-forest btn-sm mt-2" data-action="toggle-chat">Try the chatbot</button></div>
+            <div class="card"><h3>Hard guardrails</h3><div class="info-row"><span>May explain</span><span>Procedure, fields, fees, deadlines, status</span></div><div class="info-row"><span>May not do</span><span>Sign, submit, represent, or store county credentials</span></div><div class="info-row"><span>Escalates</span><span>Late filing, multiple parcels, mismatch, legal request</span></div><div class="info-row"><span>Human options</span><span>Email, paid review call, full-service upgrade</span></div><button class="btn btn-forest btn-sm mt-2" data-action="toggle-chat">Try the chatbot</button></div>
           </div>
         </section>
 
         <section id="q3" class="operator-section">
           <div class="q-label"><span class="q-num">3</span> How to scale</div>
           <h2>Build one workflow engine, then configure the local rules.</h2>
-          <p class="answer-lede">The common customer journey should not be rebuilt county by county. The scalable unit is a controlled county configuration with verified content, explicit exception rules, and an accountable update owner.</p>
+          <p class="answer-lede">The common customer journey should not be rebuilt county by county. The scalable unit is a controlled county configuration with verified content, explicit exception rules, and an accountable update owner. Proving the baseline in Broward - a measurable, digitally mature county - means each later configuration is compared against known numbers, not guesses.</p>
           <div class="system-stack">
-            <div class="stack-block"><div class="value-icon">${icon('home')}</div><h4>Common experience</h4><p>Address match, dashboard, filing worksheet, evidence handoff, reminders, hearing preparation, support, and result capture.</p></div>
+            <div class="stack-block"><div class="value-icon">${icon('home')}</div><h4>Common experience</h4><p>Account, address match, dashboard, filing worksheet, evidence PDF, reminders, hearing preparation, support, and result capture.</p></div>
             <div class="stack-arrow">→</div>
-            <div class="stack-block"><div class="value-icon">${icon('settings')}</div><h4>State + county adapter</h4><p>Deadline formula, fee, portal, petition types, terminology, submission method, hearing rules, and exception routing.</p></div>
+            <div class="stack-block"><div class="value-icon">${icon('settings')}</div><h4>State + county adapter</h4><p>Deadline formula, fee + convenience fee, portal, petition types allowed online, terminology, submission method, hearing rules, and exception routing.</p></div>
             <div class="stack-arrow">→</div>
             <div class="stack-block"><div class="value-icon">${icon('shield')}</div><h4>Operations control</h4><p>Source URLs, last verified date, content owner, second-person QA, change log, incident response, and pause switch.</p></div>
           </div>
           <div class="card mt-3">
-            <div class="card-head"><div><h3>County configuration record</h3><p>The exact fields an operator must complete before a county can go live.</p></div><span class="pill pill-green">Broward · Live-ready</span></div>
+            <div class="card-head"><div><h3>County configuration record</h3><p>The exact fields an operator must complete before a county can go live. Broward's own 2025 fee change from $25 to $15 is the proof this record needs an owner and a verification date.</p></div><span class="pill pill-green">Broward · Live-ready</span></div>
             <div class="config-grid">
-              ${['Tax year','Parcel terminology','TRIM mailing date','Filing deadline','Filing fee','Portal URL','Allowed petition types','Joint parcel rules','Evidence method','Hearing modes','County contacts','Partial payment reminder','Source URLs','Last verified date','Content owner','QA status'].map(x=>`<div class="config-chip">${x}</div>`).join('')}
+              ${['Tax year','Parcel terminology','TRIM mailing date','Filing window + deadline','Filing fee + convenience fee','Portal URL','Petition types allowed online','Office-only petition types','Evidence method','Hearing modes','County contacts','Partial payment reminder','Legal review window','Source URLs','Last verified date','Content owner + QA status'].map(x=>`<div class="config-chip">${x}</div>`).join('')}
             </div>
           </div>
           <div class="section-title"><div><h3>Rollout sequence</h3><p>Expand only after the prior phase is measurable and stable.</p></div></div>
@@ -1033,23 +1182,23 @@
             <div class="phase"><div class="phase-dot">3</div><h4>All 67 counties</h4><p>County onboarding checklist, QA queue, and annual TRIM refresh.</p></div>
             <div class="phase"><div class="phase-dot">4</div><h4>50-state platform</h4><p>State process modules plus local filing adapters and compliance review.</p></div>
           </div>
-          <div class="callout callout-info mt-3"><div>${icon('refresh',18)}</div><div><div class="callout-title">The most important scaling feature is the pause switch</div><div class="callout-copy">When a deadline, fee, portal, form, or evidence rule changes, operations must be able to pause a county immediately, update the configuration, complete two-person QA, and republish without engineering a new product.</div></div></div>
+          <div class="callout callout-info mt-3"><div>${icon('refresh',18)}</div><div><div class="callout-title">The most important scaling feature is the pause switch</div><div class="callout-copy">When a deadline, fee, portal, form, or evidence rule changes - as Broward's fee just did - operations must be able to pause a county immediately, update the configuration, complete two-person QA, and republish without engineering a new product.</div></div></div>
         </section>
 
         <section id="q4" class="operator-section">
           <div class="q-label"><span class="q-num">4</span> Key metrics</div>
           <h2>Measure whether paid homeowners finish - and exactly where they fail.</h2>
           <p class="answer-lede">The north-star metric is not traffic or account creation. Marketing already acquired the user. Operations succeeds when an eligible paid DIY customer files an accepted petition on time.</p>
-          <div class="launch-banner"><div><div class="small">North-star metric</div><h3 class="mb-0">Accepted, on-time petitions ÷ eligible paid DIY customers</h3><p>County acceptance should be verified by confirmation capture, status check, or downstream county data - not inferred from a button click.</p></div><div class="metric-big" style="margin:0">≥ 70%</div></div>
+          <div class="launch-banner"><div><div class="small">North-star metric</div><h3 class="mb-0">Accepted, on-time petitions ÷ eligible paid DIY customers</h3><p>County acceptance should be verified by confirmation capture (transaction number + attached receipt), status check, or downstream county data - not inferred from a button click.</p></div><div class="metric-big" style="margin:0">≥ 70%</div></div>
           <div class="grid grid-2">
             <div class="card">
               <div class="card-head"><div><h3>Illustrative 500-customer pilot funnel</h3><p>Proposed operating targets, not observed results.</p></div><span class="pill pill-orange">Target model</span></div>
               <div class="funnel">
                 ${funnelRow('Paid, eligible DIY users',500,100)}
-                ${funnelRow('Property matched',475,95)}
+                ${funnelRow('Account + property matched',475,95)}
                 ${funnelRow('Filing worksheet complete',425,85)}
                 ${funnelRow('County portal handoff',400,80)}
-                ${funnelRow('Confirmation captured',360,72)}
+                ${funnelRow('Confirmation + receipt captured',360,72)}
                 ${funnelRow('Accepted on time',350,70)}
               </div>
             </div>
@@ -1061,13 +1210,14 @@
                 <tr><td><strong>Incorrect guidance incidents</strong></td><td>Core trust and compliance control</td><td>0 critical</td></tr>
                 <tr><td><strong>Portal failure rate</strong></td><td>Flags county changes quickly</td><td>&lt; 3%</td></tr>
                 <tr><td><strong>Evidence on-time rate</strong></td><td>Tests the hearing product</td><td>&gt; 85%</td></tr>
+                <tr><td><strong>Partial-payment reminder compliance</strong></td><td>Prevents automatic petition denial under s. 194.014</td><td>100% reminded</td></tr>
                 <tr><td><strong>Decision capture rate</strong></td><td>Enables outcome learning</td><td>&gt; 70%</td></tr>
               </tbody></table>
             </div>
           </div>
           <div class="section-title"><div><h3>Metric hierarchy</h3><p>Separate completion, quality, cost, and outcome.</p></div></div>
           <div class="grid grid-4">
-            <div class="card metric-card"><div class="pill pill-green">Completion</div><h3 class="mt-2">Did they finish?</h3><p>Activation, worksheet completion, portal handoff, confirmation capture, evidence submission, hearing attendance.</p></div>
+            <div class="card metric-card"><div class="pill pill-green">Completion</div><h3 class="mt-2">Did they finish?</h3><p>Activation, worksheet completion, portal handoff, confirmation + receipt capture, evidence submission, hearing attendance.</p></div>
             <div class="card metric-card"><div class="pill pill-red">Quality</div><h3 class="mt-2">Did the process work?</h3><p>Rejected or incomplete petition rate, missed deadlines, incorrect instructions, county content freshness.</p></div>
             <div class="card metric-card"><div class="pill pill-orange">Economics</div><h3 class="mt-2">Did DIY stay DIY?</h3><p>Cost to serve, support minutes, chatbot containment, manual intervention, upgrade conversion, refunds.</p></div>
             <div class="card metric-card"><div class="pill pill-blue">Outcome</div><h3 class="mt-2">What happened?</h3><p>Reduction granted, final value change, estimated tax impact, decision capture, homeowner confidence.</p></div>
@@ -1077,19 +1227,19 @@
         <section id="sources" class="operator-section">
           <div class="q-label">Research basis</div>
           <h2>Verified sources and explicit assumptions</h2>
-          <p class="answer-lede">County rules and portals change. The production system should display a last-verified date, retain source links, assign a content owner, and require two-person QA before publication.</p>
+          <p class="answer-lede">County rules and portals change - Broward's filing fee dropped from $25 to $15 mid-research, which is exactly why the production system displays a last-verified date, retains source links, assigns a content owner, and requires two-person QA before publication.</p>
           <div class="card">
-            <div class="card-head"><div><h3>Sources used in this prototype</h3><p>Last reviewed July 25, 2026.</p></div><span class="pill pill-green">Official-first</span></div>
+            <div class="card-head"><div><h3>Sources used in this prototype</h3><p>Last reviewed July 27, 2026.</p></div><span class="pill pill-green">Official-first</span></div>
             <div class="source-list">${SOURCES.map(s=>`<a class="source-link" href="${s.url}" target="_blank" rel="noopener"><span>${escapeHTML(s.name)}</span><span>${escapeHTML(s.label)} ${icon('external',11)}</span></a>`).join('')}</div>
           </div>
-          <div class="data-note mt-2"><strong>Prototype assumptions:</strong> owner name is known; address is entered by the homeowner; property and value data shown are synthetic; the appeal is one owner-filed residential market-value petition; the evidence package already exists; no county credentials are stored; no petition is filed by Abode; all savings are estimates.</div>
+          <div class="data-note mt-2"><strong>Prototype assumptions:</strong> the homeowner creates an Abode account (name, email, phone); the address is entered by the homeowner; property and value data shown are synthetic; the appeal is one owner-filed residential market-value petition; the evidence package already exists; passwords are never saved in this demo; no county credentials are stored; no petition is filed by Abode; all savings are estimates; records persist in browser storage and export to CSV in place of a production database.</div>
         </section>
       `;
     }
     function funnelRow(label,count,pct){return `<div class="funnel-row"><span>${label}</span><div class="funnel-track"><div class="funnel-bar" style="width:${pct}%">${pct}%</div></div><strong>${num(count)}</strong></div>`}
 
     function renderFooter(){
-      return `<footer class="footer"><span>Abode Appeal · Interactive operations case prototype · Synthetic customer/property data</span><span>Research last verified July 25, 2026 · <a href="#" data-action="set-mode" data-mode="operator">View methodology</a></span></footer>`;
+      return `<footer class="footer"><span>Abode Appeal · Interactive operations case prototype · Synthetic customer/property data</span><span>Research last verified July 27, 2026 · <a href="#" data-action="set-mode" data-mode="operator">View methodology</a></span></footer>`;
     }
 
     function renderChat(){
@@ -1097,13 +1247,13 @@
       el.className=`chat-drawer ${state.chatOpen?'open':''}`;
       el.innerHTML=`
         <div class="chat-head"><div class="chat-head-title"><div class="bot-avatar">A</div><div><h4>Abode Assistant</h4><p>Procedure-focused · Broward 2026</p></div></div><button class="chat-close" data-action="toggle-chat">×</button></div>
-        <div class="chat-boundary"><strong>Boundary:</strong> I explain verified process and next steps. I do not file, sign, represent you, provide a legal conclusion, or ask for your county password.</div>
-        <div class="chat-messages" id="chatMessages">${state.chatMessages.map(m=>`<div class="msg ${m.from}">${escapeHTML(m.text)}${m.source?`<div class="source-tag">${escapeHTML(m.source)}</div>`:''}</div>`).join('')}</div>
+        <div class="chat-boundary"><strong>Boundary:</strong> I explain verified process and next steps. I do not file, sign, represent you, provide a legal conclusion, or ask for your county-issued password.</div>
+        <div class="chat-messages" id="chatMessages">${state.chatMessages.map(m=>`<div class="msg ${m.from}" style="white-space:pre-line">${escapeHTML(m.text)}${m.source?`<div class="source-tag">${escapeHTML(m.source)}</div>`:''}</div>`).join('')}</div>
         <div class="chat-suggestions">
-          ${['What is my deadline?','What does Abode do?','I have two parcels','Help me prepare for the hearing'].map(q=>`<button class="suggestion" data-action="chat-question" data-question="${escapeHTML(q)}">${escapeHTML(q)}</button>`).join('')}
+          ${['What is my deadline?','How much is the fee?','When will I hear back?','Write my hearing script','Do I still pay my tax bill?','I own another property'].map(q=>`<button class="suggestion" data-action="chat-question" data-question="${escapeHTML(q)}">${escapeHTML(q)}</button>`).join('')}
         </div>
         <div class="chat-input"><input id="chatInput" placeholder="Ask about your next step"/><button class="send-btn" data-action="send-chat">→</button></div>
-        <div class="chat-escalate"><a class="btn btn-secondary" href="mailto:support@abodemoney.com?subject=Broward DIY Appeal Help">${icon('mail',13)} Email</a><button class="btn btn-soft" data-action="open-support">${icon('calendar',13)} Human help</button></div>`;
+        <div class="chat-escalate"><a class="btn btn-secondary" href="mailto:hello@abodemoney.com?subject=Broward DIY Appeal Help">${icon('mail',13)} Email</a><button class="btn btn-soft" data-action="open-support">${icon('calendar',13)} Human help</button></div>`;
       requestAnimationFrame(()=>{const m=document.getElementById('chatMessages');if(m)m.scrollTop=m.scrollHeight;});
     }
 
@@ -1117,8 +1267,8 @@
           ${packageCard('Expert Review','Paid add-on','A short scheduled call to review your filing path and unanswered procedural questions.')}
           ${packageCard('Full-Service Upgrade','Eligibility-based quote','Request Abode filing and representation where available. Separate scope and authorization.')}
         </div>
-        ${state.support.package==='Expert Review'?`<div class="card mt-3"><h3>Schedule a review call</h3><div class="form-grid">${inputField('Preferred date','support.callDate',state.support.callDate||'2026-08-03','date')}${selectField('Preferred time','support.callTime',state.support.callTime||'10:00',[['10:00','10:00 AM ET'],['13:00','1:00 PM ET'],['16:00','4:00 PM ET']])}</div><button class="btn btn-forest" data-action="schedule-call">Request this time</button></div>`:''}
-        ${state.support.package==='Full-Service Upgrade'?`<div class="callout callout-info mt-3"><div>${icon('phone',18)}</div><div><div class="callout-title">Upgrade request</div><div class="callout-copy">A team member would confirm county coverage, deadlines, authorization, pricing, and whether Abode can take the case before promising representation.</div><button class="btn btn-forest btn-sm mt-2" data-action="request-upgrade">Request eligibility review</button></div></div>`:''}
+        ${state.support.package==='Expert Review'?`<div class="card mt-3"><h3>Schedule a review call</h3><p class="small" style="margin-bottom:12px">Pick the date and time that work for you - nothing is pre-selected.</p><div class="form-grid">${inputField('Preferred date','support.callDate',state.support.callDate,'date','Choose the date you would like the call.')}${selectField('Preferred time','support.callTime',state.support.callTime,[['','Select a time'],['10:00','10:00 AM ET'],['13:00','1:00 PM ET'],['16:00','4:00 PM ET']])}</div><button class="btn btn-forest" data-action="schedule-call">Request this time</button></div>`:''}
+        ${state.support.package==='Full-Service Upgrade'?(state.support.upgradeRequested?`<div class="callout callout-success mt-3"><div>${icon('check',18)}</div><div><div class="callout-title">Upgrade request received - here is what happens next</div><div class="callout-copy">A team member will email ${escapeHTML(state.account.email||'your account email')} within 1 business day to confirm county coverage, deadlines, required authorization documents, and pricing before any representation begins. <strong>Important:</strong> this request does not pause your filing deadline - keep following the DIY steps until Abode confirms in writing that it has taken over the filing.</div></div></div>`:`<div class="callout callout-info mt-3"><div>${icon('phone',18)}</div><div><div class="callout-title">Upgrade request</div><div class="callout-copy">A team member would confirm county coverage, deadlines, authorization, pricing, and whether Abode can take the case before promising representation.</div><button class="btn btn-forest btn-sm mt-2" data-action="request-upgrade">Request eligibility review</button></div></div>`):''}
         ${state.support.scheduled?`<div class="callout callout-success mt-3"><div>${icon('check',18)}</div><div><div class="callout-title">Call request saved</div><div class="callout-copy">${displayDate(state.support.callDate)} at ${escapeHTML(state.support.callTime)} ET. Prototype only - no calendar invitation was sent.</div></div></div>`:''}
       </div>`;
     }
@@ -1126,7 +1276,7 @@
 
     function createPropertyFromInput(input){
       const exact=DEMO_PROPERTIES.find(p=>p.address.toLowerCase()===input.toLowerCase());
-      if(exact) return structuredClone(exact);
+      if(exact){const c=structuredClone(exact);c.owner=state.account.owner;return c;}
       const lower=input.toLowerCase();
       let city='Fort Lauderdale', millage=18.5714;
       if(lower.includes('hollywood')){city='Hollywood';millage=22.0571}
@@ -1141,43 +1291,146 @@
     function showToast(text){
       const t=document.getElementById('toast');t.textContent=text;t.classList.add('show');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>t.classList.remove('show'),2400);
     }
-    async function copyText(text){
-      try{await navigator.clipboard.writeText(text);showToast('Copied to clipboard');}
-      catch(e){showToast('Copy is unavailable in this browser');}
+    function legacyCopy(text){
+      const ta=document.createElement('textarea');
+      ta.value=text; ta.setAttribute('readonly','');
+      ta.style.position='fixed'; ta.style.opacity='0'; ta.style.left='-9999px';
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,text.length);
+      let ok=false; try{ ok=document.execCommand('copy'); }catch(e){ ok=false; }
+      ta.remove();
+      showToast(ok?'Copied to clipboard':'Copy failed - select the text and copy manually');
+    }
+    function copyText(text){
+      if(navigator.clipboard && window.isSecureContext){
+        navigator.clipboard.writeText(text).then(()=>showToast('Copied to clipboard')).catch(()=>legacyCopy(text));
+      } else legacyCopy(text);
     }
     function worksheetText(){
       const p=state.property;
-      return `ABODE BROWARD DIY FILING WORKSHEET\nTaxpayer: ${state.account.owner}\nProperty address: ${p.address}\nParcel / folio: ${p.parcel}\nProperty type: ${p.type}\nIssue: Assessment / market value\nReason: ${state.appealReasons.join('; ')}\nEstimated hearing time: 15 minutes\nAttendance preference: Remote, if offered\n2026 deadline: September 18, 2026\nCounty filing fee: $25\n\nReview every answer against the official county petition. The homeowner remains responsible for signing and submitting.`;
+      return `ABODE BROWARD DIY FILING WORKSHEET\nTaxpayer: ${state.account.owner}\nEmail: ${state.account.email}\nPhone: ${state.account.phone}\nMailing address: ${state.account.mailing||'(add mailing address)'}\nProperty address: ${p.address}\nParcel / folio: ${p.parcel}\nProperty type: ${p.type}\nIssue: Assessment / market value\nReason: ${state.appealReasons.join('; ')}\nEstimated hearing time: 15 minutes\nAttendance preference: Remote, if offered\n2026 deadline: September 18, 2026\nCounty filing fee: $15 non-refundable (card adds 2.55% convenience fee, min $2)\nPortal: ${PORTAL_URL}\n\nReview every answer against the official county petition. The homeowner remains responsible for signing and submitting.`;
     }
     function downloadBlob(name,content,type='text/plain'){
       const blob=new Blob([content],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),500);
     }
-    function downloadEvidence(){
-      const p=state.property;
-      const content=`ABODE EVIDENCE PACKAGE - INTERVIEW PROTOTYPE\n\nProperty: ${p.address}\nFolio: ${p.parcel}\nCurrent 2026 just value: ${money(p.justValue)}\nEvidence-supported value: ${money(p.supportedValue)}\n\nDEMO CONTENT ONLY\nThe actual case brief assumes the evidence package has already been created. A production file would contain the evidence summary, comparable sales, property facts, condition documentation, and exhibit index.\n`;
-      downloadBlob(`Abode_Evidence_Package_${p.parcel}.txt`,content);
-      state.filing.evidenceDownloaded=true;saveState();render();showToast('Demo evidence package downloaded');
+
+    function evidenceComps(p){
+      const sv=Number(p.supportedValue);
+      return [
+        {addr:`Comparable A - same neighborhood, ${p.city}`, sale:Math.round(sv*0.99/1000)*1000, note:'Closed sale within 0.4 mi, similar size and age, adjusted for lot.'},
+        {addr:`Comparable B - same neighborhood, ${p.city}`, sale:Math.round(sv*1.02/1000)*1000, note:'Closed sale within 0.6 mi, superior condition, adjusted downward.'},
+        {addr:`Comparable C - adjacent subdivision, ${p.city}`, sale:Math.round(sv*0.96/1000)*1000, note:'Closed sale within 0.9 mi, slightly smaller, adjusted upward.'}
+      ];
     }
+
+    function downloadEvidence(){
+      const p=state.property, s=calcSavings(), comps=evidenceComps(p);
+      const due=subtractDays(state.hearing.date,15);
+      if(window.jspdf && window.jspdf.jsPDF){
+        const doc=new window.jspdf.jsPDF({unit:'pt',format:'letter'});
+        const W=612, M=54; let y=64;
+        const line=(txt,opt={})=>{
+          const size=opt.size||10.5;
+          doc.setFontSize(size);
+          doc.setFont('helvetica',opt.bold?'bold':'normal');
+          doc.setTextColor(opt.color||'#142322');
+          const wrapped=doc.splitTextToSize(txt,W-M*2);
+          wrapped.forEach(w=>{ if(y>730){doc.addPage();y=64;} doc.text(w,M,y); y+=size*1.45; });
+          y+=opt.gap||0;
+        };
+        const rule=()=>{ if(y>720){doc.addPage();y=64;} doc.setDrawColor('#c9d6d0'); doc.line(M,y,W-M,y); y+=18; };
+
+        line('ABODE APPEAL - HEARING EVIDENCE PACKAGE',{size:16,bold:true,color:'#173f3b'});
+        line('Broward County Value Adjustment Board · 2026 tax year · Interview prototype (synthetic data)',{size:9,color:'#687a77',gap:8});
+        rule();
+        line('1. PETITION SUMMARY',{size:12,bold:true,color:'#173f3b',gap:2});
+        line(`Petitioner: ${state.account.owner}`);
+        line(`Contact: ${state.account.email} · ${state.account.phone}`);
+        line(`Property: ${p.address}`);
+        line(`Parcel / folio: ${p.parcel} · ${p.type}`);
+        line(`Petition type: DR-486 value petition (assessment / market value)`);
+        line(`Reason(s): ${state.appealReasons.join('; ')}`,{gap:8});
+        rule();
+        line('2. REQUESTED CORRECTION',{size:12,bold:true,color:'#173f3b',gap:2});
+        line(`Current 2026 just value: ${money(p.justValue)}`);
+        line(`Evidence-supported January 1 market value: ${money(p.supportedValue)}`);
+        line(`Requested reduction: ${money(Number(p.justValue)-Number(p.supportedValue))}`);
+        line(`Estimated annual tax impact if granted: ${money(s.savings)} (at ${Number(p.millage).toFixed(4)} mills; estimate only, subject to exemptions, caps, and certified rates)`,{gap:8});
+        rule();
+        line('3. PETITION ANSWERS - COPY INTO THE COUNTY PORTAL',{size:12,bold:true,color:'#173f3b',gap:2});
+        line(`Taxpayer: ${state.account.owner}`);
+        line(`Email: ${state.account.email} · Phone: ${state.account.phone}`);
+        line(`Mailing address: ${state.account.mailing||'(complete in the Abode worksheet)'}`);
+        line(`Property address: ${p.address}`);
+        line(`Parcel / folio number: ${p.parcel}`);
+        line(`Petition issue: Assessment / market value (DR-486)`);
+        line(`Reason(s): ${state.appealReasons.join('; ')||'(select in the Abode worksheet)'}`);
+        line('Estimated hearing time: 15 minutes · Attendance preference: remote, if offered');
+        line('County transaction number (write in after filing): ______________________',{gap:8});
+        rule();
+        line('4. COMPARABLE SALES (SYNTHETIC DEMO DATA)',{size:12,bold:true,color:'#173f3b',gap:2});
+        comps.forEach((c,i)=>{
+          line(`Exhibit ${String.fromCharCode(65+i)}: ${c.addr}`,{bold:true});
+          line(`Sale price: ${money(c.sale)} · ${c.note}`,{gap:4});
+        });
+        line('In production, this section contains the completed Abode evidence analysis: qualified sales, adjustments, property record card, photos, and condition documentation.',{size:9,color:'#687a77',gap:8});
+        rule();
+        line('5. HEARING CHECKLIST',{size:12,bold:true,color:'#173f3b',gap:2});
+        line(`- Evidence exchange: deliver this package to the county at least 15 days before the hearing (${due?'due '+shortDate(due):'date TBD'}).`);
+        line('- Review the property appraiser\'s evidence, available at least 7 days before the hearing.');
+        line('- Bring or have on screen: this package, the hearing notice, and your transaction number.');
+        line('- Hearings are quasi-judicial, run by an appraiser special magistrate, and typically last about 15 minutes.',{gap:8});
+        rule();
+        line('6. CRITICAL PAYMENT RULE (s. 194.014, F.S.)',{size:12,bold:true,color:'#b84242',gap:2});
+        line('A pending petition does not pause the tax bill. Before the delinquency date (normally April 1 following the assessment year), pay ALL non-ad valorem assessments plus at least 75% of the ad valorem taxes, less applicable discounts. If the required partial payment is not made, the VAB will deny the petition.',{gap:8});
+        rule();
+        line('This document is an interview prototype with synthetic data. It is not legal advice, an appraisal, or a filed petition. The homeowner reviews, signs, files, and attends the hearing.',{size:8.5,color:'#687a77'});
+        doc.save(`Abode_Evidence_Package_${p.parcel}.pdf`);
+        showToast('Evidence package PDF downloaded');
+      } else {
+        const content=`ABODE EVIDENCE PACKAGE - INTERVIEW PROTOTYPE (PDF library unavailable offline)\n\nPetitioner: ${state.account.owner}\nProperty: ${p.address}\nFolio: ${p.parcel}\nCurrent 2026 just value: ${money(p.justValue)}\nEvidence-supported value: ${money(p.supportedValue)}\nEstimated annual impact: ${money(s.savings)}\n\nComparables (synthetic):\n${comps.map((c,i)=>`Exhibit ${String.fromCharCode(65+i)}: ${c.addr} - ${money(c.sale)} - ${c.note}`).join('\n')}\n\nPayment rule (s. 194.014, F.S.): before the April 1 delinquency date, pay all non-ad valorem assessments plus at least 75% of ad valorem taxes, or the VAB will deny the petition.\n`;
+        downloadBlob(`Abode_Evidence_Package_${p.parcel}.txt`,content);
+        showToast('PDF library offline - text version downloaded');
+      }
+      state.filing.evidenceDownloaded=true;saveState();render();
+    }
+
+    function exportRecordCSV(){
+      const cols=['appeal_id','account_name','account_email','account_phone','mailing_address','property_address','folio','county','petition_type','appeal_reasons','worksheet_reviewed','transaction_number','filed_date','fee_paid','receipt_file','attested','hearing_date','hearing_time','hearing_format','notice_file','evidence_submitted','outcome','decision_date','final_value','estimated_annual_savings','record_exported_at'];
+      const esc=v=>'"'+String(v==null?'':v).replaceAll('"','""')+'"';
+      const rows=(state.appeals.length?state.appeals:[]).map(a=>{
+        const p=a.property||{}; const sv=calcSavings(a.property,a.result.finalValue||null);
+        return [a.id,state.account.owner,state.account.email,state.account.phone,state.account.mailing,p.address||'',p.parcel||'',p.county||'','DR-486 value petition',a.appealReasons.join('; '),a.filing.answersSaved,a.filing.transaction,a.filing.filedDate,a.filing.feePaid,a.filing.receiptName,a.filing.attested,a.hearing.date,a.hearing.time,a.hearing.format,a.hearing.noticeFile,a.hearing.evidenceUploaded,a.result.outcome,a.result.decisionDate,a.result.finalValue,Math.round(sv.savings),new Date().toISOString()].map(esc).join(',');
+      });
+      downloadBlob('Abode_Appeal_Records.csv',cols.join(',')+'\n'+rows.join('\n'),'text/csv');
+      showToast(`Exported ${rows.length} appeal record${rows.length===1?'':'s'} as CSV`);
+    }
+
     function downloadCalendar(){
-      if(!state.hearing.date){showToast('Add the hearing date first');return}
+      if(!state.hearing.date){showToast('Add the hearing date from your DR-481 notice first');return}
+      if(!state.hearing.time){showToast('Tip: add the hearing time too so the invite lands at the right hour');}
       const due=subtractDays(state.hearing.date,15);
       const dateToICS=d=>d.replaceAll('-','');
-      const ics=`BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Abode Appeal//DIY MVP//EN\nBEGIN:VEVENT\nUID:evidence-${Date.now()}@abode\nDTSTART;VALUE=DATE:${dateToICS(due)}\nSUMMARY:Broward appeal evidence deadline\nDESCRIPTION:Submit and save proof of the evidence exchange.\nEND:VEVENT\nBEGIN:VEVENT\nUID:hearing-${Date.now()}@abode\nDTSTART;VALUE=DATE:${dateToICS(state.hearing.date)}\nSUMMARY:Broward property tax appeal hearing\nDESCRIPTION:Bring the Abode evidence package and hearing outline.\nEND:VEVENT\nEND:VCALENDAR`;
+      const ics=`BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Abode Appeal//DIY MVP//EN\nBEGIN:VEVENT\nUID:evidence-${Date.now()}@abode\nDTSTART;VALUE=DATE:${dateToICS(due)}\nSUMMARY:Broward appeal evidence deadline\nDESCRIPTION:Submit and save proof of the evidence exchange.\nEND:VEVENT\nBEGIN:VEVENT\nUID:hearing-${Date.now()}@abode\n${state.hearing.time?`DTSTART:${dateToICS(state.hearing.date)}T${state.hearing.time.replace(':','')}00`:`DTSTART;VALUE=DATE:${dateToICS(state.hearing.date)}`}\nSUMMARY:Broward property tax appeal hearing${state.hearing.time?` (${formatTime(state.hearing.time)})`:''}\nDESCRIPTION:Bring the Abode evidence package and your personalized script.\nEND:VEVENT\nBEGIN:VEVENT\nUID:payment-${Date.now()}@abode\nDTSTART;VALUE=DATE:20270315\nSUMMARY:Broward appeal - required partial tax payment check\nDESCRIPTION:Pay all non-ad valorem assessments plus at least 75 percent of ad valorem taxes before the April 1 delinquency date or the VAB will deny the petition (s. 194.014, F.S.).\nEND:VEVENT\nEND:VCALENDAR`;
       downloadBlob('Abode_Broward_Appeal_Deadlines.ics',ics,'text/calendar');
-      state.hearing.calendarAdded=true;saveState();render();showToast('Calendar file created');
+      state.hearing.calendarAdded=true;saveState();render();showToast('Calendar file created (includes partial-payment reminder)');
     }
 
     function chatReply(q){
       const s=q.toLowerCase();
-      if(s.includes('deadline')||s.includes('when')) return {text:'For this 2026 Broward value appeal, the timely filing deadline is September 18, 2026. An informal conversation with the Property Appraiser does not extend that deadline.',source:'BCPA + Florida DOR · verified Jul 25, 2026'};
-      if(s.includes('two parcel')||s.includes('multiple')||s.includes('joint')||s.includes('condo')) return {text:'Multiple, joint, or grouped parcels are outside the standard one-parcel DIY path. I would pause the workflow and route this to the exception queue so the correct county petition method and fee can be reviewed.',source:'Exception rule · human review required'};
-      if(s.includes('abode')||s.includes('file for')||s.includes('do you')) return {text:'Abode provides the personalized instructions, copy-ready worksheet, evidence-package handoff, reminders, hearing preparation, chatbot, and email support. You review, sign, submit, pay the county fee, upload evidence, and attend the hearing yourself.',source:'DIY service boundary'};
-      if(s.includes('hearing')||s.includes('prepare')) return {text:'Start with the requested value, present the strongest two or three exhibits, explain material property differences, answer questions directly, and close by restating the value you are requesting. Evidence must be exchanged at least 15 days before the hearing.',source:'Florida Statute 194.011 + Abode guide'};
-      if(s.includes('fee')||s.includes('$25')||s.includes('cost')) return {text:'Broward County lists a $25 VAB filing fee for the 2026 cycle. It is paid directly to the county during filing and is separate from the Abode DIY purchase.',source:'Broward VAB · verified Jul 25, 2026'};
+      if(s.includes('deadline')||s.includes('when')) return {text:'For this 2026 Broward value appeal, the timely filing deadline is September 18, 2026. The county opened the 2025 window in mid-August, so expect a similar window for 2026. An informal conversation with the Property Appraiser does not extend the deadline.',source:'Broward VAB + BCPA · verified Jul 27, 2026'};
+      if(s.includes('transaction')||s.includes('status')||s.includes('track')) return {text:'When you submit online, the county portal issues you a transaction number and a password. That county-issued pair is your login for "Check Petition Status" on the same portal - use it to track your petition and hearing date. Keep it in your own records; Abode never asks for it.',source:'Broward VAB portal · verified Jul 27, 2026'};
+      if(s.includes('two parcel')||s.includes('multiple')||s.includes('joint')||s.includes('contiguous')||s.includes('another property')||s.includes('second property')) return {text:'Two different things: owning several properties is fine in DIY - add each one from the sidebar and file it as its own petition with its own $15 fee. But a SINGLE petition combining multiple or contiguous parcels cannot be filed online - Broward requires it to be filed in the VAB office at 115 S. Andrews Ave., Room 120, Fort Lauderdale, so I would route that to the exception queue.',source:'Broward VAB filing instructions'};
+      if(s.includes('abode')||s.includes('file for')||s.includes('do you')) return {text:'Abode provides the personalized instructions, copy-ready worksheet, hearing-ready evidence PDF, reminders, hearing preparation, chatbot, and email support. You review, sign, submit, pay the county fee, upload evidence, and attend the hearing yourself.',source:'DIY service boundary'};
+      if(s.includes('script')){ const sc=personalScript(); return sc?{text:'Here is a script built from your worksheet - it is also in the Hearing tab with a copy button.\n\n'+sc,source:'Generated from your worksheet answers'}:{text:'Match a property and complete the filing worksheet first - then I can build a script from your exact values and reasons.',source:'Abode guide'}; }
+      if(s.includes('notice')||s.includes('how long')||s.includes('hear back')||s.includes('when will')) return {text:'After you file, Broward mails a Notice of Hearing (Form DR-481) with your date and time - it must arrive at least 25 calendar days before the hearing, and Broward value hearings begin in October. You can also check scheduling anytime at "Petition Status" on the county portal using your transaction number and password. When it arrives, enter the date and time in the Hearing tab.',source:'Broward VAB + FL uniform rules · verified Jul 27, 2026'};
+      if(s.includes('hearing')||s.includes('prepare')) return {text:'Start with the requested value, present the strongest two or three exhibits, explain material property differences, answer questions directly, and close by restating the value you are requesting. Evidence must be exchanged at least 15 days before the hearing; Broward value hearings begin in October and are run by appraiser special magistrates. Ask me for a "script" and I will build one from your worksheet.',source:'Florida Statute 194.011 + Broward VAB'};
+      if(s.includes('fee')||s.includes('$15')||s.includes('cost')) return {text:'Broward charges a $15 non-refundable VAB filing fee, paid directly to the county when you submit. Card payments (Visa, Mastercard, Amex) add a 2.55% convenience fee with a $2 minimum. This is separate from your Abode DIY purchase. Note the county lowered this from $25 - always trust the fee shown on the official portal.',source:'Broward VAB portal · verified Jul 27, 2026'};
       if(s.includes('late')||s.includes('miss')) return {text:'A late value petition may require a good-cause review. That is a defined exception, so I would not tell you to continue through the standard flow. Use email support or request a human review now.',source:'Exception rule · human review required'};
+      if(s.includes('pay')||s.includes('tax bill')||s.includes('75')||s.includes('april')||s.includes('194.014')) return {text:'Yes - filing a petition does not pause your tax bill. Under s. 194.014, F.S., before the delinquency date (normally April 1 after the assessment year) you must pay all non-ad valorem assessments plus at least 75% of the ad valorem taxes, less discounts. If that partial payment is not made, the VAB will deny your petition. Abode adds this to your calendar reminders.',source:'s. 194.014, F.S. + Broward VAB · verified Jul 27, 2026'};
+      if(s.includes('dr-486')||s.includes('dr486')||s.includes('form')) return {text:'DR-486 is the official petition form. The online portal completes it electronically as you file, so you do not fill the paper form for an e-filing. The paper DR-486 (linked in step 3) is only needed if you prefer to file by mail with a $15 check to the VAB office.',source:'Florida DOR + Broward VAB'};
       if(s.includes('save')||s.includes('savings')) return {text:`The current prototype estimates about ${money(calcSavings().savings)} in annual tax impact if the evidence-supported value is granted. It is not guaranteed and depends on the final decision, exemptions, capped assessment, taxing districts, and certified millage.`,source:'Simplified estimate · not a promise'};
-      if(s.includes('reason')||s.includes('appeal')) return {text:'This MVP covers a challenge to the property’s January 1 market value. It does not use the standard path for an exemption denial, classification, portability, tax deferral, or a complaint about the tax rate.',source:'BCPA + Florida DOR'};
-      return {text:'I can explain the Broward filing deadline, county fee, copy-ready petition answers, evidence deadline, hearing steps, and the DIY service boundary. For a late petition, multiple parcels, ownership mismatch, or a legal conclusion, I will route you to a human.',source:'Abode verified knowledge base'};
+      if(s.includes('reason')||s.includes('appeal')) return {text:'This MVP covers a challenge to the property’s January 1 market value. Exemption, classification, and portability petitions use different routes and must be filed in the Broward VAB office rather than online.',source:'BCPA + Broward VAB'};
+      return {text:'I can explain the Broward filing window and deadline, the $15 county fee, the transaction number and status check, copy-ready petition answers, the evidence deadline, hearing steps, the required partial tax payment, and the DIY service boundary. For a late petition, multiple parcels, ownership mismatch, or a legal conclusion, I will route you to a human.',source:'Abode verified knowledge base'};
     }
     function sendChat(question){
       const q=(question||'').trim();if(!q)return;
@@ -1190,28 +1443,67 @@
       const a=e.target.closest('[data-action]'); if(!a)return;
       const action=a.dataset.action;
       if(action==='set-mode'){state.mode=a.dataset.mode;state.modalOpen=false;saveState();render();window.scrollTo({top:0,behavior:'smooth'});}
-      else if(action==='reset-demo'){if(confirm('Reset the prototype to its starting state?')){state=structuredClone(DEFAULT_STATE);localStorage.removeItem('abodeAppealMvp');render();showToast('Prototype reset');}}
-      else if(action==='use-demo-property'){state.property=structuredClone(DEMO_PROPERTIES[0]);state.account.mailing=state.property.address;saveState();render();showToast('Demo property matched');}
+      else if(action==='reset-demo'){if(confirm('Reset the demo? This clears the account, all properties, and every saved answer, and returns to the sign-up page.')){state=attachProxies(structuredClone(DEFAULT_STATE));localStorage.removeItem('abodeAppealMvpBrowardV3');localStorage.removeItem('abodeAppealMvpBrowardV2');render();window.scrollTo({top:0,behavior:'smooth'});showToast('Demo reset - ready for a fresh run');}}
+      else if(action==='fill-demo-account'){
+        const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+        set('acctName','Jordan Rivera');set('acctEmail','jordan.rivera@example.com');set('acctPhone','(954) 555-0148');set('acctPass','demo-pass-2026');
+        showToast('Demo profile filled - review and create the account');
+      }
+      else if(action==='create-account'){
+        const name=(document.getElementById('acctName')||{}).value?.trim()||'';
+        const email=(document.getElementById('acctEmail')||{}).value?.trim()||'';
+        const phone=(document.getElementById('acctPhone')||{}).value?.trim()||'';
+        const pass=(document.getElementById('acctPass')||{}).value||'';
+        if(!name||!email||!phone||!pass){showToast('All fields are required');return}
+        if(!email.includes('@')||!email.includes('.')){showToast('Enter a valid email address');return}
+        if(pass.length<8){showToast('Password must be at least 8 characters');return}
+        state.account.owner=name;state.account.email=email;state.account.phone=phone;state.account.created=true;
+        saveState();render();showToast(`Welcome, ${name.split(' ')[0]} - account created`);
+      }
+      else if(action==='use-demo-property'){
+        const used=state.appeals.map(a=>a.property&&a.property.address);
+        const pick=DEMO_PROPERTIES.find(d=>!used.includes(d.address))||DEMO_PROPERTIES[0];
+        const c=structuredClone(pick);c.owner=state.account.owner;
+        newAppeal(c);saveState();render();showToast('Demo property matched');
+      }
       else if(action==='search-property'){
         const input=document.getElementById('addressInput');const val=input?input.value.trim():'';
         if(!val){showToast('Enter a property address');return}
         if(!/fl|florida|fort lauderdale|hollywood|pompano|plantation|davie|broward/i.test(val)){showToast('This pilot currently supports Broward County addresses');return}
-        state.property=createPropertyFromInput(val);state.account.mailing=val;saveState();render();showToast('Property mapped to Broward County');
+        if(state.appeals.some(a=>a.property&&a.property.address.toLowerCase()===val.toLowerCase())){showToast('That property is already in your list - open it from Your properties');return}
+        newAppeal(createPropertyFromInput(val));saveState();render();showToast('Property mapped to Broward County');
       }
-      else if(action==='change-property'){state.property=null;state.homeownerTab='overview';saveState();render();}
+      else if(action==='add-property'||action==='change-property'){state.activeId=null;state.homeownerTab='overview';saveState();render();window.scrollTo({top:0,behavior:'smooth'});}
+      else if(action==='switch-appeal'){state.activeId=a.dataset.id;state.homeownerTab='overview';saveState();render();window.scrollTo({top:0,behavior:'smooth'});}
+      else if(action==='replace-receipt'){state.filing.receiptAttached=false;state.filing.receiptName='';saveState();render();}
+      else if(action==='replace-notice'){state.hearing.noticeFile='';saveState();render();}
+      else if(action==='fill-demo-notice'){state.hearing.date='2026-11-12';state.hearing.time='10:30';state.hearing.format='remote';state.hearing.noticeFile='DR-481_Notice_demo.pdf';saveState();render();showToast('Demo DR-481 notice applied');}
+      else if(action==='copy-script'){copyText(personalScript());}
       else if(action==='set-tab'){state.homeownerTab=a.dataset.tab;saveState();render();window.scrollTo({top:0,behavior:'smooth'});}
       else if(action==='check-eligibility'){state.eligibility.checked=true;saveState();render();showToast(eligibilityIssues().length?'Exception route identified':'Standard DIY path confirmed');}
-      else if(action==='save-filing-answers'){if(!state.appealReasons.length){showToast('Select at least one appeal reason');return}state.filing.answersSaved=true;saveState();render();showToast('Filing worksheet marked as reviewed');}
+      else if(action==='save-filing-answers'){
+        if(!state.account.owner.trim()||!state.account.email.trim()||!state.account.phone.trim()||!(state.account.mailing||'').trim()){showToast('Complete all required worksheet fields, including mailing address');return}
+        if(state.account.mailingSame && state.property && state.account.mailing.trim().toLowerCase()!==state.property.address.trim().toLowerCase()){showToast('Mailing address must match the property address while "same as property" is checked');return}
+        if(!state.appealReasons.length){showToast('Select at least one appeal reason');return}
+        state.filing.answersSaved=true;saveState();render();showToast('Filing worksheet marked as reviewed');
+      }
       else if(action==='copy-text'){copyText(a.dataset.copy||'');}
       else if(action==='copy-worksheet'){copyText(worksheetText());}
       else if(action==='download-evidence'){downloadEvidence();}
       else if(action==='open-portal'){state.filing.portalOpened=true;saveState();setTimeout(render,100);}
-      else if(action==='fill-demo-confirmation'){state.filing.transaction='BRW-2026-10482';state.filing.filedDate=new Date().toISOString().slice(0,10);state.filing.feePaid=true;state.filing.attested=true;saveState();render();}
+      else if(action==='fill-demo-confirmation'){state.filing.transaction='2026-014823';state.filing.filedDate=new Date().toISOString().slice(0,10);state.filing.feePaid=true;state.filing.attested=true;state.filing.receiptAttached=true;state.filing.receiptName='VAB_receipt_demo.pdf';saveState();render();}
       else if(action==='mark-filed'){
-        if(!state.filing.transaction.trim()||!state.filing.filedDate||!state.filing.feePaid||!state.filing.attested){showToast('Complete the transaction, date, fee, and attestation fields');return}
+        const pr=prereq();
+        if(!pr.allOk){
+          const names=['confirm the filing path (step 1)','review the worksheet (step 2)','download the documents (step 3)','open the county portal (step 4)'];
+          showToast('First: '+names.filter((_,i)=>!pr.list[i]).join(', '));return;
+        }
+        if(!state.filing.transaction.trim()||!state.filing.filedDate||!state.filing.feePaid||!state.filing.attested||!state.filing.receiptAttached){showToast('All fields are required: transaction, date, receipt attachment, fee, and attestation');return}
+        if((state.filing.transaction.match(/\d/g)||[]).length<6){showToast('The county transaction number should contain at least six digits (e.g., 2026-014823)');return}
         state.filing.filed=true;saveState();render();showToast('Petition marked as filed');
       }
       else if(action==='download-calendar'){downloadCalendar();}
+      else if(action==='export-record'){exportRecordCSV();}
       else if(action==='record-result'){
         if(!state.result.outcome||!state.result.decisionDate||!state.result.finalValue){showToast('Add the outcome, decision date, and final value');return}
         state.result.closed=true;saveState();render();showToast('Appeal result recorded');
@@ -1222,9 +1514,9 @@
       else if(action==='ask-hearing-chat'){state.chatOpen=true;sendChat('Help me prepare for the hearing');}
       else if(action==='open-support'){state.modalOpen=true;saveState();renderModal();}
       else if(action==='close-support'){state.modalOpen=false;saveState();renderModal();}
-      else if(action==='select-package'){state.support.package=a.dataset.package;state.support.scheduled=false;saveState();renderModal();}
+      else if(action==='select-package'){state.support.package=a.dataset.package;state.support.scheduled=false;state.support.upgradeRequested=false;saveState();renderModal();}
       else if(action==='schedule-call'){if(!state.support.callDate||!state.support.callTime){showToast('Choose a date and time');return}state.support.scheduled=true;saveState();renderModal();showToast('Call request saved');}
-      else if(action==='request-upgrade'){showToast('Full-service eligibility request saved');state.modalOpen=false;saveState();renderModal();}
+      else if(action==='request-upgrade'){state.support.upgradeRequested=true;saveState();renderModal();showToast('Full-service eligibility request saved');}
       else if(action==='scroll-section'){const el=document.getElementById(a.dataset.section);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
     });
 
@@ -1235,6 +1527,27 @@
 
     document.addEventListener('change', e=>{
       const el=e.target;
+      if(el.dataset.actionCheck==='toggle-mailing-same'){
+        state.account.mailingSame=el.checked;
+        if(el.checked && state.property) state.account.mailing=state.property.address;
+        saveState();render();
+        return;
+      }
+      if(el.id==='noticeInput'){
+        const f=el.files&&el.files[0];
+        state.hearing.noticeFile=f?f.name:'';
+        saveState();render();
+        if(f)showToast('Notice attached - now enter the date and time from it');
+        return;
+      }
+      if(el.id==='receiptInput'){
+        const f=el.files&&el.files[0];
+        state.filing.receiptAttached=!!f;
+        state.filing.receiptName=f?f.name:'';
+        saveState();render();
+        if(f)showToast('Receipt attached (name recorded, file not stored)');
+        return;
+      }
       if(el.dataset.bind){
         const value=el.type==='checkbox'?el.checked:el.value;
         setPath(el.dataset.bind,value);
@@ -1244,7 +1557,7 @@
       if(el.dataset.reason){
         if(el.checked&&!state.appealReasons.includes(el.dataset.reason))state.appealReasons.push(el.dataset.reason);
         if(!el.checked)state.appealReasons=state.appealReasons.filter(x=>x!==el.dataset.reason);
-        saveState();
+        saveState();render();
       }
     });
     document.addEventListener('keydown',e=>{
